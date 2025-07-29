@@ -121,10 +121,6 @@ void Engine::InitializeProgram(){
 void Engine::MainLoop()
 {
  
-    const float gravityConstant = -9.81f; // meters per second squared
-    bool inAir = true;
-    glm::vec3 mVelocity = glm::vec3(0.0f); // Add this to your Camera class
-
     const glm::vec2 offsets[] = {
         { PLAYER_RADIUS,  0.0f },
         {-PLAYER_RADIUS,  0.0f },
@@ -146,25 +142,22 @@ void Engine::MainLoop()
         
         glm::vec3 oldPos = camera.mEye;
         
+        Input();
         float deltaTime = GetDeltaTime();
+        inAir = true;
 
-        if(gravity && inAir){
+        if(gravity){
 
-            // Apply gravity to vertical velocity
             mVelocity.y += gravityConstant * deltaTime;
-            // Apply velocity to camera position
             camera.mEye += mVelocity * deltaTime;
         }
         
-        Input();
         ImGui::Begin("Info panel");
         
 
         if (collisionMode) {
             glm::vec3 delta = camera.mEye - oldPos;
-
             camera.mEye = oldPos;
-
             glm::vec3 feetPos = camera.mEye - glm::vec3(0, PLAYER_HEIGHT, 0); // feet position at base
 
             float feetHeight = 0.0f;
@@ -172,7 +165,6 @@ void Engine::MainLoop()
 
             // Check X-axis collision
             glm::vec3 posX = feetPos + glm::vec3(delta.x, 0, 0);
-
             if (!checkHorizontalCollision(posX, 0.0f) && !checkHorizontalCollision(posX, headHeight)) {
                 camera.mEye.x += delta.x;
             }
@@ -182,28 +174,47 @@ void Engine::MainLoop()
             ImGui::Text("Feet Position: (%.1f, %.1f, %.1f)", feetPos.x, feetPos.y, feetPos.z);
 
             float headOffset = PLAYER_HEIGHT;
-            glm::vec3 headPos = testY + glm::vec3(0, headOffset, 0);
-            bool collision = false;
+            glm::vec3 headPos = testY + glm::vec3(0, PLAYER_HEIGHT, 0);
+            ImGui::Text("Head Position: (%.1f, %.1f, %.1f)", headPos.x, headPos.y, headPos.z);
+
+            bool feetCollision = false;
+            bool headCollision = false;
+
             for (const auto& offset : offsets) {
-                // Feet check
                 glm::vec3 checkFeet = testY + glm::vec3(offset.x, 0.0f, offset.y);
-                // Head check
                 glm::vec3 checkHead = headPos + glm::vec3(offset.x, 0.0f, offset.y);
 
-                if (checkCollisionAt(checkFeet) || checkCollisionAt(checkHead)) {
-                    collision = true;
-                    break;
-                }
-            }
+                if (checkCollisionAt(checkFeet))
+                    feetCollision = true;
+                if (checkCollisionAt(checkHead))
+                    headCollision = true;
 
-            if (!collision) {
-                camera.mEye.y += delta.y;
-                inAir = true;
+                if (feetCollision || headCollision) break;
+            }
+   
+            if (delta.y > 0.0f) { 
+                // Moving UP
+                if (headCollision) {
+                    // Hit ceiling, stop
+                    mVelocity.y = 0.0f;
+                    inAir = true;
+                    camera.mEye.y = oldPos.y; // snap to just below ceiling
+                } else {
+                    camera.mEye.y += delta.y;
+                    inAir = true;
+                }
             } 
-            else {
-                mVelocity.y = 0.0f;
-                inAir = false;
-                camera.mEye.y = oldPos.y; // snap to surface
+            else if (delta.y < 0.0f) { 
+                // Moving DOWN
+                if (feetCollision) {
+                    // Landed
+                    mVelocity.y = 0.0f;
+                    inAir = false;
+                    camera.mEye.y = oldPos.y; // snap to ground
+                } else {
+                    camera.mEye.y += delta.y;
+                    inAir = true;
+                }
             }
 
             // Check Z-axis collision
@@ -212,9 +223,8 @@ void Engine::MainLoop()
                 camera.mEye.z += delta.z;
             }
         }
-            
-        renderer->RenderVoxels(camera);
         
+        renderer->RenderVoxels(camera);
         camera.fpsControls = gravity;
         
         
@@ -224,6 +234,7 @@ void Engine::MainLoop()
             ImGui::Text("Camera Speed: %.3f", camera.speed);
             ImGui::Text("FPS: %.3f", fps);
             ImGui::Text("Collision Mode: %s", collisionMode ? "true" : "false");
+            ImGui::Text("In Air: %s", inAir ? "true" : "false");
             ImGui::Checkbox("Toggle collision mode:", &collisionMode);
             ImGui::Checkbox("Toggle gravity:", &gravity);
         ImGui::End();
@@ -327,9 +338,31 @@ void Engine::Input(){
     if (state[SDL_SCANCODE_D]){
         camera.MoveRight(camera.speed);
     }
-    if (state[SDL_SCANCODE_SPACE]){
-        camera.MoveUp(camera.speed);
+    // if (state[SDL_SCANCODE_SPACE]){
+    //     if(gravity && !inAir)
+    //     {
+    //         camera.MoveUp(camera.speed);
+    //     }
+    //     else if(!gravity)
+    //     {
+    //         camera.MoveUp(camera.speed);
+    //     }
+    // }
+
+    if (state[SDL_SCANCODE_SPACE]) {
+        if (gravity) {
+            if (!inAir) {
+                // Start jump
+                mVelocity.y = jumpVelocity;
+                inAir = true;
+            }
+        } else {
+            // Free-fly mode without gravity
+            camera.MoveUp(camera.speed);
+        }
     }
+
+
     if (state[SDL_SCANCODE_LCTRL]){
         camera.MoveDown(camera.speed);
     }

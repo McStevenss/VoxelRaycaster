@@ -50,10 +50,12 @@ class Engine{
 
         bool lockMouse = false;
         bool gravity = false;
+        bool inAir = true;
         bool collisionMode = true;
-        //Light cubes
-        std::vector<glm::vec3> lightPositions;
-        std::vector<glm::vec3> lightColors;
+        int jumpVelocity = 5;
+
+        const float gravityConstant = -9.81f; // meters per second squared
+        glm::vec3 mVelocity = glm::vec3(0.0f); // Add this to your Camera class
 
         const float PLAYER_HEIGHT = 0.5f;
         const float PLAYER_RADIUS = 0.25f;
