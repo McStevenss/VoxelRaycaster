@@ -143,5 +143,7 @@ void main() {
         pos = rayOrigin + rayDir * tCurrent;
     }
 
-    FragColor = vec4(0.5, 0.5, 0.5, 1.0); // Background
+    // FragColor = vec4(0.5, 0.5, 0.5, 1.0); // Background
+    FragColor = vec4(0.529, 0.808, 0.922, 1.0); // Background
+    
 }
