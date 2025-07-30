@@ -4,26 +4,26 @@
 #include <string>
 #include <glm/glm.hpp>
 #include <glad/glad.h>
-#include "camera.hpp"
+#include "Camera.hpp"
 #include "Shader.hpp"
+#include "VoxelTerrain.h"
 
 class VoxelRenderer {
 public:
-    VoxelRenderer(int width, int height);
+    // VoxelRenderer(int width, int height);
+    VoxelRenderer(int width, int height, VoxelTerrain *terrain);
     void Init();
-    float GetTerrainHeight(float worldX, float worldZ) const;
     void RenderVoxels(const Camera& camera);
 
     bool isVoxel(glm::vec3 pos);
     void loadTexture(const std::string &path, GLuint &textureRef);
-
+    
 
 private:
     int mScreenWidth, mScreenHeight;
-    int mMapSize;
-
+    
+    VoxelTerrain *mTerrain;
     std::vector<uint8_t> mFrameBuffer;
-
     GLuint mTextureID;
     
     GLuint voxelTexture;
@@ -38,7 +38,5 @@ private:
     int VOXEL_WORLD_SIZE = 256;
     std::vector<GLubyte> voxels;
 
-    void InitRenderTexture();
-    void DrawToScreen();
     void InitFullscreenQuad();
 };

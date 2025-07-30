@@ -4,38 +4,29 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include <cstdlib> // for rand()
+#include "VoxelTerrain.h"
 
-VoxelRenderer::VoxelRenderer(int width, int height)
-    : mScreenWidth(width), mScreenHeight(height), mMapSize(1024)
+VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
+    : mScreenWidth(width), mScreenHeight(height)
 {
+    mTerrain = terrain;
     Init();
     loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor);
     loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall);
 }
 
 void VoxelRenderer::Init() {
-    // mShader = new Shader("shaders/voxel_terrain.vert", "shaders/voxel_terrain.frag");
     mShader = new Shader("shaders/voxel_raycast.vert", "shaders/voxel_raycast.frag");
 
     InitFullscreenQuad();
-
+    voxels = mTerrain->getVoxels();
+    
     glGenTextures(1, &voxelTexture);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
-
-    const int VOXEL_PADDING = 32;
-    // std::vector<GLubyte> voxels(VOXEL_WORLD_SIZE * VOXEL_WORLD_SIZE * VOXEL_WORLD_SIZE, 0);
-    voxels.resize(VOXEL_WORLD_SIZE * VOXEL_WORLD_SIZE * VOXEL_WORLD_SIZE, 0);
-
-    for (int z = VOXEL_PADDING; z < VOXEL_WORLD_SIZE-VOXEL_PADDING; ++z)
-        for (int y = VOXEL_PADDING; y < VOXEL_WORLD_SIZE-VOXEL_PADDING; ++y)
-            for (int x = VOXEL_PADDING; x < VOXEL_WORLD_SIZE-VOXEL_PADDING; ++x)
-                voxels[x + y * VOXEL_WORLD_SIZE + z * VOXEL_WORLD_SIZE * VOXEL_WORLD_SIZE] = (rand() % 100 < 50) ? 255 : 0;
-
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, VOXEL_WORLD_SIZE, VOXEL_WORLD_SIZE, VOXEL_WORLD_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, voxels.data());
-
+    
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);           
@@ -52,8 +43,8 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef){
     glGenTextures(1, &textureRef);
     glBindTexture(GL_TEXTURE_2D, textureRef);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, colorData);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // Or GL_NEAREST
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Or GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -86,32 +77,19 @@ void VoxelRenderer::RenderVoxels(const Camera& camera) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
 
-    //####
+    //################ TEMP WALL/FLOOR TEXTURES #############
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, voxelSurfaceTexture_wall);
-
+    
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, voxelSurfaceTexture_floor);
-    //####
+    //#######################################################
 
     glBindVertexArray(mQuadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glBindVertexArray(0);
 
-}
-
-bool VoxelRenderer::isVoxel(glm::vec3 pos)
-{
-    int x = (int)pos.x;
-    int y = (int)pos.y;
-    int z = (int)pos.z;
-    
-    if (x < 0 || y < 0 || z < 0 || x >= VOXEL_WORLD_SIZE || y >= VOXEL_WORLD_SIZE || z >= VOXEL_WORLD_SIZE)
-        return false;
-
-    int index = x + y * VOXEL_WORLD_SIZE + z * VOXEL_WORLD_SIZE * VOXEL_WORLD_SIZE;
-    return voxels[index] != 0;
 }
 
 void VoxelRenderer::InitFullscreenQuad() {

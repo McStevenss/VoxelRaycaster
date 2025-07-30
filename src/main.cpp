@@ -4,7 +4,7 @@
 // #define SDL_VIDEO_DRIVER_X11 1
 #define SDL_VIDEO_DRIVER_WINDOWS 1
 
-#include <engine.h>
+#include <Engine.h>
 
 //############### For Linux #########################
 //[DEPR]c++ src/*.cpp  -I lib/include/ -o bin/Game -lSDL2 -ldl -lassimp

@@ -1,6 +1,6 @@
 #ifndef RENDERER_H
 #define RENDERER_H
-#include "camera.hpp"
+#include "Camera.hpp"
 #include "ShaderManager.hpp"
 #include "BufferManager.h"
 #include "skybox.h"

@@ -6,8 +6,10 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 // Engine libs
-#include "engine.h"
+#include "Engine.h"
 #include "VoxelRenderer.hpp"
+#include "Player.h"
+#include "VoxelTerrain.h"
 
 // STD libs + GLM
 #include <stdio.h>
@@ -26,15 +28,14 @@ Engine::Engine()
     mScreenHeight = 1080;
     mGraphicsApplicationWindow = nullptr;
     mOpenGLContext             = nullptr;
-    mQuit                      = false; 
     bool mMouseActive          = true;
+    int terrainSeed            = 69;
     InitializeProgram();
-    // camera.SetProjectionMatrix
-    camera.SetProjectionMatrix(90.0f,(float)mScreenWidth/(float)mScreenHeight,0.1,1000);
-    std::cout << "[Engine][Camera] Fovy:" << camera.mFovy << std::endl;
-    renderer = new VoxelRenderer(mScreenWidth,mScreenHeight);
-    
 
+    mPlayer = new Player(glm::vec3(199.0f, 228.0f, 68.0f),mScreenWidth,mScreenHeight,mGraphicsApplicationWindow);
+    terrain = new VoxelTerrain(terrainSeed);
+    renderer = new VoxelRenderer(mScreenWidth,mScreenHeight, terrain);
+    
 }
 
 
@@ -121,122 +122,27 @@ void Engine::InitializeProgram(){
 void Engine::MainLoop()
 {
  
-    const glm::vec2 offsets[] = {
-        { PLAYER_RADIUS,  0.0f },
-        {-PLAYER_RADIUS,  0.0f },
-        { 0.0f,  PLAYER_RADIUS },
-        { 0.0f, -PLAYER_RADIUS },
-        { PLAYER_RADIUS * 0.707f,  PLAYER_RADIUS * 0.707f },
-        {-PLAYER_RADIUS * 0.707f,  PLAYER_RADIUS * 0.707f },
-        { PLAYER_RADIUS * 0.707f, -PLAYER_RADIUS * 0.707f },
-        {-PLAYER_RADIUS * 0.707f, -PLAYER_RADIUS * 0.707f }
-    };
-
-     // GUI
-     while(!mQuit){
+    while(!mPlayer->mQuit){
          
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
         
-        
-        glm::vec3 oldPos = camera.mEye;
-        
-        Input();
         float deltaTime = GetDeltaTime();
-        inAir = true;
+        mPlayer->Update(deltaTime, terrain);
 
-        if(gravity){
-
-            mVelocity.y += gravityConstant * deltaTime;
-            camera.mEye += mVelocity * deltaTime;
-        }
+        renderer->RenderVoxels(mPlayer->mCamera);
         
         ImGui::Begin("Info panel");
-        
-
-        if (collisionMode) {
-            glm::vec3 delta = camera.mEye - oldPos;
-            camera.mEye = oldPos;
-            glm::vec3 feetPos = camera.mEye - glm::vec3(0, PLAYER_HEIGHT, 0); // feet position at base
-
-            float feetHeight = 0.0f;
-            float headHeight = PLAYER_HEIGHT * 0.9f;
-
-            // Check X-axis collision
-            glm::vec3 posX = feetPos + glm::vec3(delta.x, 0, 0);
-            if (!checkHorizontalCollision(posX, 0.0f) && !checkHorizontalCollision(posX, headHeight)) {
-                camera.mEye.x += delta.x;
-            }
-
-            // Check Y-axis collision (vertical movement)
-            glm::vec3 testY = feetPos + glm::vec3(0, delta.y, 0);
-            ImGui::Text("Feet Position: (%.1f, %.1f, %.1f)", feetPos.x, feetPos.y, feetPos.z);
-
-            float headOffset = PLAYER_HEIGHT;
-            glm::vec3 headPos = testY + glm::vec3(0, PLAYER_HEIGHT, 0);
-            ImGui::Text("Head Position: (%.1f, %.1f, %.1f)", headPos.x, headPos.y, headPos.z);
-
-            bool feetCollision = false;
-            bool headCollision = false;
-
-            for (const auto& offset : offsets) {
-                glm::vec3 checkFeet = testY + glm::vec3(offset.x, 0.0f, offset.y);
-                glm::vec3 checkHead = headPos + glm::vec3(offset.x, 0.0f, offset.y);
-
-                if (checkCollisionAt(checkFeet))
-                    feetCollision = true;
-                if (checkCollisionAt(checkHead))
-                    headCollision = true;
-
-                if (feetCollision || headCollision) break;
-            }
-   
-            if (delta.y > 0.0f) { 
-                // Moving UP
-                if (headCollision) {
-                    // Hit ceiling, stop
-                    mVelocity.y = 0.0f;
-                    inAir = true;
-                    camera.mEye.y = oldPos.y; // snap to just below ceiling
-                } else {
-                    camera.mEye.y += delta.y;
-                    inAir = true;
-                }
-            } 
-            else if (delta.y < 0.0f) { 
-                // Moving DOWN
-                if (feetCollision) {
-                    // Landed
-                    mVelocity.y = 0.0f;
-                    inAir = false;
-                    camera.mEye.y = oldPos.y; // snap to ground
-                } else {
-                    camera.mEye.y += delta.y;
-                    inAir = true;
-                }
-            }
-
-            // Check Z-axis collision
-            glm::vec3 posZ = feetPos + glm::vec3(0, 0, delta.z);
-            if (!checkHorizontalCollision(posZ, 0.0f) && !checkHorizontalCollision(posZ, headHeight)) {
-                camera.mEye.z += delta.z;
-            }
-        }
-        
-        renderer->RenderVoxels(camera);
-        camera.fpsControls = gravity;
-        
-        
         // Begin the Info panel window
             float fps = 1.0f / deltaTime;
-            ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", camera.mEye.x, camera.mEye.y, camera.mEye.z);
-            ImGui::Text("Camera Speed: %.3f", camera.speed);
+            ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", mPlayer->mPosition.x, mPlayer->mPosition.y, mPlayer->mPosition.z);
+            ImGui::Text("Camera Speed: %.3f", mPlayer->mCamera.speed);
             ImGui::Text("FPS: %.3f", fps);
-            ImGui::Text("Collision Mode: %s", collisionMode ? "true" : "false");
-            ImGui::Text("In Air: %s", inAir ? "true" : "false");
-            ImGui::Checkbox("Toggle collision mode:", &collisionMode);
-            ImGui::Checkbox("Toggle gravity:", &gravity);
+            ImGui::Text("Collision Mode: %s", mPlayer->collisionMode ? "true" : "false");
+            ImGui::Text("In Air: %s", mPlayer->inAir ? "true" : "false");
+            ImGui::Checkbox("Toggle collision mode:", &mPlayer->collisionMode);
+            ImGui::Checkbox("Toggle gravity:", &mPlayer->gravity);
         ImGui::End();
         // Render ImGui
         ImGui::Render();
@@ -248,29 +154,6 @@ void Engine::MainLoop()
     }
 }
 
-bool Engine::checkHorizontalCollision(const glm::vec3& centerPos, float yOffset) {
-    // Positions to check around the player on XZ plane at height yOffset
-    glm::vec3 pointsToCheck[8] = {
-        centerPos + glm::vec3( PLAYER_RADIUS, yOffset,  0.0f),
-        centerPos + glm::vec3(-PLAYER_RADIUS, yOffset,  0.0f),
-        centerPos + glm::vec3(0.0f, yOffset,  PLAYER_RADIUS),
-        centerPos + glm::vec3(0.0f, yOffset, -PLAYER_RADIUS),
-        centerPos + glm::vec3( PLAYER_RADIUS * 0.7f, yOffset,  PLAYER_RADIUS * 0.7f),
-        centerPos + glm::vec3( PLAYER_RADIUS * 0.7f, yOffset, -PLAYER_RADIUS * 0.7f),
-        centerPos + glm::vec3(-PLAYER_RADIUS * 0.7f, yOffset,  PLAYER_RADIUS * 0.7f),
-        centerPos + glm::vec3(-PLAYER_RADIUS * 0.7f, yOffset, -PLAYER_RADIUS * 0.7f),
-    };
-
-    for (auto& point : pointsToCheck) {
-        if (checkCollisionAt(point)) return true;
-    }
-    return false;
-}
-
-bool Engine::checkCollisionAt(const glm::vec3& pos) {
-    return renderer->isVoxel(pos);
-}
-
 float Engine::GetDeltaTime()
 {
     static uint64_t lastTime = SDL_GetTicks64();
@@ -279,104 +162,3 @@ float Engine::GetDeltaTime()
     lastTime = currentTime;
     return deltaTime;
 }
-
-void Engine::Input(){
-    SDL_Event e;
-    const Uint8 *state = SDL_GetKeyboardState(NULL);
-    
-    static int mouseX = mScreenWidth/2;
-    static int mouseY = mScreenHeight/2;
-    
-    
-    while(SDL_PollEvent(&e) != 0){
-        if(e.type == SDL_QUIT){
-            mQuit = true;
-        }
-    
-        else if(e.type == SDL_MOUSEMOTION && !lockMouse){
-    
-            mouseX += e.motion.xrel;
-            mouseY += e.motion.yrel;
-            camera.MouseLook(mouseX,mouseY);
-        
-        }
-        else if(e.type == SDL_MOUSEWHEEL){
-            if(e.wheel.y > 0) {
-
-                if (state[SDL_SCANCODE_LSHIFT])
-                    camera.speed += 0.1f;  // Increase the value
-                else
-                    camera.speed += 0.025f;  // Increase the value
-            } 
-            else if(e.wheel.y < 0) {
-                if (state[SDL_SCANCODE_LSHIFT])
-                    camera.speed -= 0.1f;  // Increase the value
-                else
-                    camera.speed -= 0.025f;  // Increase the value
-
-                if(camera.speed < 0.0)
-                    camera.speed = 0.0;  
-            }
-        }
-
-        // Feed events to ImGui
-        ImGui_ImplSDL2_ProcessEvent(&e);
-    }
-
-    if (state[SDL_SCANCODE_ESCAPE]){
-        mQuit = true;
-    }
-    if (state[SDL_SCANCODE_W]){
-        camera.MoveForward(camera.speed);
-    }
-    if (state[SDL_SCANCODE_S]){
-        camera.MoveBackward(camera.speed);
-    }
-    if (state[SDL_SCANCODE_A]){
-        camera.MoveLeft(camera.speed);
-    }
-    if (state[SDL_SCANCODE_D]){
-        camera.MoveRight(camera.speed);
-    }
-    // if (state[SDL_SCANCODE_SPACE]){
-    //     if(gravity && !inAir)
-    //     {
-    //         camera.MoveUp(camera.speed);
-    //     }
-    //     else if(!gravity)
-    //     {
-    //         camera.MoveUp(camera.speed);
-    //     }
-    // }
-
-    if (state[SDL_SCANCODE_SPACE]) {
-        if (gravity) {
-            if (!inAir) {
-                // Start jump
-                mVelocity.y = jumpVelocity;
-                inAir = true;
-            }
-        } else {
-            // Free-fly mode without gravity
-            camera.MoveUp(camera.speed);
-        }
-    }
-
-
-    if (state[SDL_SCANCODE_LCTRL]){
-        camera.MoveDown(camera.speed);
-    }
-
-    //Lock/Unlock mouse to interact with gui
-    if (state[SDL_SCANCODE_F]){
-        SDL_SetRelativeMouseMode(SDL_TRUE);
-        lockMouse = false;
-    }
-    if (state[SDL_SCANCODE_G]){
-        SDL_SetRelativeMouseMode(SDL_FALSE);
-        lockMouse = true;
-        SDL_WarpMouseInWindow(mGraphicsApplicationWindow, mScreenWidth/2,mScreenHeight/2);
-    }
-}
-
-
