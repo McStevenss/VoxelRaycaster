@@ -12,10 +12,10 @@ class VoxelTerrain {
         VoxelTerrain(unsigned int seed);
         bool isVoxel(glm::vec3 pos);
         std::vector<GLubyte> getVoxels();
+        int VoxelWorldSize = 256;
 
     private:
         int mMapSize;
-        int VOXEL_WORLD_SIZE = 256;
         std::vector<GLubyte> voxels;
 
     };

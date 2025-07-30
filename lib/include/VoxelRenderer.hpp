@@ -31,11 +31,8 @@ private:
     GLuint voxelSurfaceTexture_floor;
     
     Shader* mShader = nullptr;
-    unsigned int mHeightmapTex = 0;
-    unsigned int mColormapTex = 0;
     unsigned int mQuadVAO = 0;
     unsigned int mQuadVBO = 0;
-    int VOXEL_WORLD_SIZE = 256;
     std::vector<GLubyte> voxels;
 
     void InitFullscreenQuad();

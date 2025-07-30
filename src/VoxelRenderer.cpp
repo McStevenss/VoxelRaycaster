@@ -23,7 +23,7 @@ void VoxelRenderer::Init() {
     
     glGenTextures(1, &voxelTexture);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, VOXEL_WORLD_SIZE, VOXEL_WORLD_SIZE, VOXEL_WORLD_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, voxels.data());
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, mTerrain->VoxelWorldSize, mTerrain->VoxelWorldSize, mTerrain->VoxelWorldSize, 0, GL_RED, GL_UNSIGNED_BYTE, voxels.data());
     
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -72,7 +72,7 @@ void VoxelRenderer::RenderVoxels(const Camera& camera) {
     mShader->setVec3("cameraPos",camera.mEye);
     mShader->setMat4("invProjection",invProj);
     mShader->setMat4("invView",invView);
-    mShader->setInt("voxelWorldSize",VOXEL_WORLD_SIZE);
+    mShader->setInt("voxelWorldSize",mTerrain->VoxelWorldSize);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
@@ -92,8 +92,8 @@ void VoxelRenderer::RenderVoxels(const Camera& camera) {
 
 }
 
-void VoxelRenderer::InitFullscreenQuad() {
-
+void VoxelRenderer::InitFullscreenQuad() 
+{
     float quadVertices[] = {
     // positions   // texCoords (flipped vertically)
     -1.0f, -1.0f,  0.0f, 1.0f,

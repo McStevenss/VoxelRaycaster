@@ -116,7 +116,8 @@ void Player::Update(float deltaTime, VoxelTerrain *terrain)
 
 }
 
-bool Player::checkHorizontalCollision(const glm::vec3& centerPos, float yOffset, VoxelTerrain *terrain) {
+bool Player::checkHorizontalCollision(const glm::vec3& centerPos, float yOffset, VoxelTerrain *terrain) 
+{
     // Positions to check around the player on XZ plane at height yOffset
     glm::vec3 pointsToCheck[8] = {
         centerPos + glm::vec3( PLAYER_RADIUS, yOffset,  0.0f),
