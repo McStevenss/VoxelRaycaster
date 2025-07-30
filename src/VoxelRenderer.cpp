@@ -109,10 +109,12 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
     mShader->setInt("voxelWorldSize",mTerrain->VoxelWorldSize);
 
 
+    //############## VOXELTERRAIN 3D TEXTURE ###########
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
+    //##################################################
 
-    //################ TEMP WALL/FLOOR TEXTURES #############
+    //################ WALL/FLOOR TEXTURES #############
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, voxelSurfaceTexture_wall);
     
@@ -122,10 +124,10 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
 
     glBindVertexArray(mQuadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
     glBindVertexArray(0);
 
 
+    // TEMP copy raycast buffer to main to see
     glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(0, 0, mScreenWidth, mScreenHeight,

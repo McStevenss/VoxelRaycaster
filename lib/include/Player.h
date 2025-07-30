@@ -27,18 +27,29 @@ class Player {
         glm::vec3 mPosition;
               
     private:
-
         SDL_Window* mGraphicsApplicationWindow;
+        const float PLAYER_HEIGHT = 0.5f;
+        const float PLAYER_RADIUS = 0.25f;
 
         int mScreenWidth;
         int mScreenHeight;
+
+        const glm::vec2 offsets[8] = {
+            { PLAYER_RADIUS,  0.0f },
+            {-PLAYER_RADIUS,  0.0f },
+            { 0.0f,  PLAYER_RADIUS },
+            { 0.0f, -PLAYER_RADIUS },
+            { PLAYER_RADIUS * 0.707f,  PLAYER_RADIUS * 0.707f },
+            {-PLAYER_RADIUS * 0.707f,  PLAYER_RADIUS * 0.707f },
+            { PLAYER_RADIUS * 0.707f, -PLAYER_RADIUS * 0.707f },
+            {-PLAYER_RADIUS * 0.707f, -PLAYER_RADIUS * 0.707f }
+        };
 
         const float gravityConstant = -9.81f; // meters per second squared
         glm::vec3 mVelocity = glm::vec3(0.0f); // Add this to your Camera class
         int jumpVelocity = 5;
         
-        const float PLAYER_HEIGHT = 0.5f;
-        const float PLAYER_RADIUS = 0.25f;
+
 
 
 };
