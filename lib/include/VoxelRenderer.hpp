@@ -33,6 +33,11 @@ private:
     Shader* mShader = nullptr;
     unsigned int mQuadVAO = 0;
     unsigned int mQuadVBO = 0;
+    
+    unsigned int mFBO = 0;
+    unsigned int mColorTexture = 0;
+    unsigned int mDepthTexture = 0;
+
     std::vector<GLubyte> voxels;
 
     void InitFullscreenQuad();

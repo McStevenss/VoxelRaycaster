@@ -8,13 +8,15 @@ uniform sampler2D voxelSurfaceTextureWall;
 uniform sampler2D voxelSurfaceTextureFloor;
 
 uniform vec3 cameraPos;
+uniform float nearPlane;
+uniform float farPlane;
 uniform mat4 invProjection;
+uniform mat4 projectionMatrix;
 uniform mat4 invView;
+uniform mat4 viewMatrix;
 uniform int voxelWorldSize;
 
 const int MAX_STEPS = 512;
-// const vec3 lightPos = vec3(230,243, 25);
-// const vec3 lightColor = vec3(0.5,0.5,0.5);
 float voxelSize = 1.0;
 
 vec3 generateRay(vec2 uv) {
@@ -81,9 +83,18 @@ void main() {
             break;
 
         float density = texture(voxelTexture, texCoord).r;
+        // Hit detected
         if (density > 0.1) {
-            // Hit detected
 
+
+            //Calculate depth to populate the depthbuffer
+            vec3 hitPos = rayOrigin + rayDir * tCurrent;
+            vec4 clipPos = projectionMatrix * viewMatrix * vec4(hitPos, 1.0);
+            clipPos /= clipPos.w;
+            float ndcDepth = clipPos.z;
+            gl_FragDepth = ndcDepth * 0.5 + 0.5;
+
+        
             voxelWorldPos = vec3(lastVoxel) * voxelSize;
             vec3 localPos = pos - voxelWorldPos;
             vec3 local = clamp(localPos / voxelSize, 0.0, 1.0);
@@ -104,17 +115,14 @@ void main() {
             voxelUV = clamp(voxelUV, 0.0, 1.0);
 
             if (face == 1) {
-                // FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green for floor
                 FragColor = texture(voxelSurfaceTextureFloor, voxelUV);
             } else {
-                // FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red for walls
                 FragColor = texture(voxelSurfaceTextureWall, voxelUV);
             }
             return;
         }
 
         lastVoxel = voxel;
-
 
         // Determine which face is next hit and step accordingly
         if (tMax.x < tMax.y && tMax.x < tMax.z) {
@@ -143,7 +151,6 @@ void main() {
         pos = rayOrigin + rayDir * tCurrent;
     }
 
-    // FragColor = vec4(0.5, 0.5, 0.5, 1.0); // Background
+    gl_FragDepth = 1.0; // Far plane
     FragColor = vec4(0.529, 0.808, 0.922, 1.0); // Background
-    
 }

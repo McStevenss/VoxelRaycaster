@@ -19,8 +19,32 @@ void VoxelRenderer::Init() {
     mShader = new Shader("shaders/voxel_raycast.vert", "shaders/voxel_raycast.frag");
 
     InitFullscreenQuad();
-    voxels = mTerrain->getVoxels();
+
+    //Create an explicit framebuffer instead of using the default one so we can attach a depthbuffer.
+    //We will write to it in the voxelrenderer fragmentshader
+    glGenFramebuffers(1, &mFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
+
+    glGenTextures(1, &mColorTexture);
+    glBindTexture(GL_TEXTURE_2D, mColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mScreenWidth, mScreenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture, 0);
+
+    glGenTextures(1, &mDepthTexture);
+    glBindTexture(GL_TEXTURE_2D, mDepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, mScreenWidth, mScreenHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mDepthTexture, 0);
     
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cerr << "[VoxelRenderer] FBO incomplete!" << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    voxels = mTerrain->getVoxels();
     glGenTextures(1, &voxelTexture);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, mTerrain->VoxelWorldSize, mTerrain->VoxelWorldSize, mTerrain->VoxelWorldSize, 0, GL_RED, GL_UNSIGNED_BYTE, voxels.data());
@@ -53,7 +77,13 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef){
 }
 
 
-void VoxelRenderer::RenderVoxels(const Camera& camera) {
+void VoxelRenderer::RenderVoxels(const Camera& camera) 
+{
+    glClearColor(0.529, 0.808, 0.922, 1.0);
+    glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
+    glViewport(0, 0, mScreenWidth, mScreenHeight);
+    glEnable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 projection = camera.GetProjectionMatrix();
     glm::mat4 view = camera.GetViewMatrix();
@@ -70,9 +100,14 @@ void VoxelRenderer::RenderVoxels(const Camera& camera) {
     //####
     
     mShader->setVec3("cameraPos",camera.mEye);
+    mShader->setFloat("nearPlane", camera.mNearPlane);
+    mShader->setFloat("farPlane", camera.mFarPlane);
     mShader->setMat4("invProjection",invProj);
+    mShader->setMat4("projectionMatrix",projection);
     mShader->setMat4("invView",invView);
+    mShader->setMat4("viewMatrix",view);
     mShader->setInt("voxelWorldSize",mTerrain->VoxelWorldSize);
+
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, voxelTexture);
@@ -86,14 +121,23 @@ void VoxelRenderer::RenderVoxels(const Camera& camera) {
     //#######################################################
 
     glBindVertexArray(mQuadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindVertexArray(0);
 
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, mScreenWidth, mScreenHeight,
+                    0, 0, mScreenWidth, mScreenHeight,
+                    GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default framebuffer
 }
 
 void VoxelRenderer::InitFullscreenQuad() 
 {
+
     float quadVertices[] = {
     // positions   // texCoords (flipped vertically)
     -1.0f, -1.0f,  0.0f, 1.0f,
@@ -104,6 +148,7 @@ void VoxelRenderer::InitFullscreenQuad()
      1.0f,  1.0f,  1.0f, 0.0f,
     -1.0f,  1.0f,  0.0f, 0.0f
     };
+
 
     glGenVertexArrays(1, &mQuadVAO);
     glGenBuffers(1, &mQuadVBO);

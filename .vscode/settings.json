@@ -1,7 +1,7 @@
 {
     "files.associations": {
-        "*.vert": "shaderlab",
-        "*.frag": "shaderlab",
+        "*.vert": "glsl",
+        "*.frag": "glsl",
         "fstream": "cpp",
         "string": "cpp",
         "ostream": "cpp",
