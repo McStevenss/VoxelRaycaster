@@ -39,6 +39,7 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
 void VoxelRenderer::Init() {
     mShader = new Shader("shaders/voxel_raycast.vert", "shaders/voxel_raycast.frag");
     mBillboardShader = new Shader("shaders/billboard.vert", "shaders/billboard.frag");
+    mSkyboxShader = new Shader("shaders/skybox.vert","shaders/skybox.frag");
 
     InitFullscreenQuad();
 
@@ -187,6 +188,8 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
     glDisable(GL_BLEND);
 
 
+    RenderSkyBox(projection,view);
+
     // TEMP copy raycast buffer to main to see
     glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -226,5 +229,20 @@ void VoxelRenderer::InitFullscreenQuad()
     glEnableVertexAttribArray(1); // texCoords
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+    glBindVertexArray(0);
+}
+
+
+void VoxelRenderer::RenderSkyBox(const glm::mat4& projection, const glm::mat4& view)
+{
+    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    
+    mSkyboxShader->use();
+    mSkyboxShader->setMat4("projection", projection);
+    mSkyboxShader->setMat4("view", glm::mat4(glm::mat3(view)));
+
+    glBindVertexArray(skyBox.VAO);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.cubemapTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
 }

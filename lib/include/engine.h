@@ -8,7 +8,6 @@
 
 //---- Engine libs ----
 #include "skybox.h"
-#include "ShaderManager.hpp"
 #include "VoxelRenderer.hpp"
 #include "Player.h"
 
