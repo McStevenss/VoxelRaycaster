@@ -36,10 +36,14 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     mSprites.emplace_back(glm::vec3(204.0f,224.0f,75.0f), billboardSize, spriteOffset);
     mSprites.emplace_back(glm::vec3(200.0f,224.0f,76.0f), billboardSize, spriteOffset);
 
+
+    
+
     tileY = 4;
     spriteOffset = glm::vec2(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
 
     mSprites.emplace_back(glm::vec3(205.0f,218.0f,76.0f), billboardSize, spriteOffset);
+    
 }
 
 void VoxelRenderer::Init() {

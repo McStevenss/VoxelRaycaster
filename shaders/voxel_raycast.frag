@@ -16,9 +16,103 @@ uniform mat4 invView;
 uniform mat4 viewMatrix;
 uniform int voxelWorldSize;
 
-const int MAX_STEPS = 512;
+const int MAX_STEPS = 256;
+const int MAX_LIGHT_STEPS = 16;
+// const vec3 lightDir = normalize(vec3(1.0, 1.0, 0.98));
+const vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
+// const vec3 lightPos = vec3(222.0, 247.0, 70.0);
+
+
 float voxelSize = 1.0;
 
+bool skyLight(ivec3 voxel, vec3 lightDir) {
+    vec3 pos = vec3(voxel) + 0.5; // center of voxel
+    for (int i = 0; i < voxelWorldSize; i++) {
+        pos += lightDir;
+        if (any(lessThan(pos, vec3(0.0))) || any(greaterThanEqual(pos, vec3(voxelWorldSize))))
+            break;
+
+        float density = texture(voxelTexture, pos / float(voxelWorldSize)).r;
+        if (density > 0.1)
+            return false; // blocked
+    }
+    return true;
+}
+
+float rayTracedSoftShadow(vec3 startPos, vec3 lightDir) {
+    float shadow = 1.0;
+    float voxelSize = 1.0 / float(voxelWorldSize);
+
+    // Start exactly at the bias, not a full step away
+    vec3 currentPos = startPos;
+    float stepSize = voxelSize * 0.1; // small near the start
+
+    for (int i = 0; i < MAX_LIGHT_STEPS; i++) {
+        // Stop if we leave the voxel volume
+        if (any(lessThan(currentPos, vec3(0.0))) ||
+            any(greaterThanEqual(currentPos, vec3(1.0)))) {
+            break;
+        }
+
+        // --- Multi-sample along step to avoid tunneling ---
+        for (int s = 0; s < 2; s++) {
+            // vec3 samplePos = currentPos + lightDir * (stepSize * (s / 2.0));
+            vec3 samplePos = currentPos + lightDir * (stepSize * (float(s) / 2.0));
+
+            // ivec3 voxel = ivec3(floor(samplePos * voxelWorldSize));
+            ivec3 voxel = ivec3(floor(samplePos * voxelWorldSize + lightDir * (0.5 / voxelWorldSize)));
+
+            float density = texelFetch(voxelTexture, voxel, 0).r;
+            // shadow = min(shadow, 0.1);
+            // if (density > 0.1) {
+            if (density > 0.1 || texture(voxelTexture, (samplePos + 0.001) ).r > 0.1) {
+                float dist = length(samplePos - startPos) * float(voxelWorldSize);
+                // Darker shadows for nearby occluders
+                float shadowAmount = smoothstep(0.0, 10.0, dist);
+                shadow = min(shadow, shadowAmount);
+                if (shadow <= 0.1) return 0.1; // Early exit
+            }
+        }
+
+        currentPos += lightDir * stepSize;
+    }
+
+    return clamp(shadow, 0.1, 1.0);
+}
+
+float voxelShadow(vec3 startPos, vec3 dir) {
+    vec3 pos = startPos;
+    ivec3 voxel = ivec3(floor(pos * voxelWorldSize));
+
+    vec3 rayStep = sign(dir);
+    vec3 deltaT = abs(1.0 / (dir * float(voxelWorldSize)));
+    
+    vec3 voxelF = vec3(voxel);
+    bvec3 stepPositive = greaterThan(rayStep, vec3(0.0));
+    vec3 nextVoxelBorder = mix(voxelF, voxelF + vec3(1.0), stepPositive);
+    vec3 nextT = (nextVoxelBorder / float(voxelWorldSize) - pos) / dir;
+
+    for (int i = 0; i < MAX_LIGHT_STEPS * voxelWorldSize; i++) {
+        if (any(lessThan(voxel, ivec3(0))) || any(greaterThanEqual(voxel, ivec3(voxelWorldSize))))
+            break;
+
+        float density = texelFetch(voxelTexture, voxel, 0).r;
+        if (density > 0.1) return 0.1;
+
+        if (nextT.x < nextT.y && nextT.x < nextT.z) {
+            voxel.x += int(rayStep.x);
+            nextT.x += deltaT.x;
+        } else if (nextT.y < nextT.z) {
+            voxel.y += int(rayStep.y);
+            nextT.y += deltaT.y;
+        } else {
+            voxel.z += int(rayStep.z);
+            nextT.z += deltaT.z;
+        }
+    }
+
+    return 1.0;
+}
 vec3 generateRay(vec2 uv) {
     vec4 clip = vec4(uv * 2.0 - 1.0, 1.0, 1.0);
     vec4 view = invProjection * clip;
@@ -89,6 +183,8 @@ void main() {
 
             //Calculate depth to populate the depthbuffer
             vec3 hitPos = rayOrigin + rayDir * tCurrent;
+
+            // vec3 lightDir = normalize(lightPos - hitPos);
             vec4 clipPos = projectionMatrix * viewMatrix * vec4(hitPos, 1.0);
             clipPos /= clipPos.w;
             float ndcDepth = clipPos.z;
@@ -114,11 +210,27 @@ void main() {
 
             voxelUV = clamp(voxelUV, 0.0, 1.0);
 
-            if (face == 1) {
+            if (face == 1)
                 FragColor = texture(voxelSurfaceTextureFloor, voxelUV);
-            } else {
+            else
                 FragColor = texture(voxelSurfaceTextureWall, voxelUV);
+
+            vec3 baseColor = FragColor.rgb;
+
+            // float bias = 0.0025;
+            float bias = 0.00;
+            float voxelWorldSizeF = float(voxelWorldSize);
+            // vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
+            vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
+            float shadow = 0.1;
+         
+            if (skyLight(voxel,lightDir)) {
+                // shadow = rayTracedSoftShadow(startShadowPos, lightDir);
+                shadow = voxelShadow(startShadowPos, lightDir);
             }
+
+            FragColor.rgb *= shadow;
+
             return;
         }
 
