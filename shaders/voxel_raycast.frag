@@ -17,15 +17,23 @@ uniform mat4 viewMatrix;
 uniform int voxelWorldSize;
 
 const int MAX_STEPS = 256;
-const int MAX_LIGHT_STEPS = 16;
-// const vec3 lightDir = normalize(vec3(1.0, 1.0, 0.98));
-const vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
-// const vec3 lightPos = vec3(222.0, 247.0, 70.0);
+const int MAX_LIGHT_STEPS = 8;
+const int MAX_RAYTRACE_RANGE = 64;
+
+
+
+const float pointLightVoxelRadius = 4.0; // e.g., 6.0 voxels
+const vec3 pointLightColor = vec3(1.0,0.0,0.0);       // e.g., vec3(1.0, 0.95, 0.8)
+const float pointLightIntensity = 1.0;  // e.g., 0.5
+
+// const vec3 lightDir = normalize(vec3(-1.0, 1.0, -1.0));
+const vec3 lightDir = normalize(vec3(0.2, 1.0, 0.2));
+// const vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0));
 
 
 float voxelSize = 1.0;
 
-bool skyLight(ivec3 voxel, vec3 lightDir) {
+bool isSkyLight(ivec3 voxel, vec3 lightDir) {
     vec3 pos = vec3(voxel) + 0.5; // center of voxel
     for (int i = 0; i < voxelWorldSize; i++) {
         pos += lightDir;
@@ -38,6 +46,21 @@ bool skyLight(ivec3 voxel, vec3 lightDir) {
     }
     return true;
 }
+
+float SkyLight(ivec3 voxel, vec3 lightDir) {
+    vec3 pos = vec3(voxel) + 0.5; // center of voxel
+    for (int i = 0; i < voxelWorldSize; i++) {
+        pos += lightDir;
+        if (any(lessThan(pos, vec3(0.0))) || any(greaterThanEqual(pos, vec3(voxelWorldSize))))
+            break;
+
+        float density = texture(voxelTexture, pos / float(voxelWorldSize)).r;
+        if (density > 0.1)
+            return 0.3; // blocked
+    }
+    return 1.0;
+}
+
 
 float rayTracedSoftShadow(vec3 startPos, vec3 lightDir) {
     float shadow = 1.0;
@@ -220,15 +243,48 @@ void main() {
             float bias = 0.00;
             float voxelWorldSizeF = float(voxelWorldSize);
             // vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
-            vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
-            float shadow = 0.1;
+            // vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
+            // vec3 startShadowPos = (hitPos + normal * 0.0005) / voxelWorldSizeF;
+            vec3 startShadowPos = (hitPos) / voxelWorldSizeF;
+            float light = 0.1;
          
-            if (skyLight(voxel,lightDir)) {
-                // shadow = rayTracedSoftShadow(startShadowPos, lightDir);
-                shadow = voxelShadow(startShadowPos, lightDir);
+            if(distance(cameraPos,hitPos) < MAX_RAYTRACE_RANGE)
+            {
+                // if (isSkyLight(voxel,lightDir)) {
+                    // light = voxelShadow(startShadowPos, lightDir);
+                // }
+                light = voxelShadow(startShadowPos, lightDir);
+            }
+            else{
+                light = SkyLight(voxel,lightDir);
+                // light = 1.0;
             }
 
-            FragColor.rgb *= shadow;
+            FragColor.rgb *= light;
+
+
+            vec3 voxelHit = hitPos / voxelSize; // convert hit position to voxel space
+            float voxelDist = distance(voxelHit, cameraPos / voxelSize);
+
+            if (voxelDist <= pointLightVoxelRadius) {
+                // Normalized direction to the camera
+                vec3 lightDirToCamera = normalize(cameraPos - hitPos);
+
+                // Simple linear falloff for performance
+                float attenuation = 1.0 - (voxelDist / pointLightVoxelRadius);
+                attenuation = max(attenuation, 0.0);
+
+                // Lambert term
+                float NdotL = max(dot(normal, lightDirToCamera), 0.0);
+
+                // Final point light contribution
+                vec3 pointLight = pointLightColor * pointLightIntensity * NdotL * attenuation;
+
+                FragColor.rgb += baseColor * pointLight;
+            }
+
+         
+
 
             return;
         }
