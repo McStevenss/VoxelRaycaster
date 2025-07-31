@@ -101,6 +101,7 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, boo
     
     GLenum format = isRGBA ? GL_RGBA : GL_RGB;
     GLenum internalFormat = isRGBA ? GL_RGBA8 : GL_RGB8;
+    GLenum min_filter = isRGBA ? GL_NEAREST : GL_LINEAR_MIPMAP_LINEAR;
 
     glGenTextures(1, &textureRef);
     glBindTexture(GL_TEXTURE_2D, textureRef);
@@ -108,7 +109,7 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, boo
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, w, h, 0, format, GL_UNSIGNED_BYTE, colorData);
 
     glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Or GL_NEAREST
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter); // Or GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -175,12 +176,11 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
     for (auto& sprite : mSprites) {  // store your sprites as a member
         sprite.Draw(view, projection, camera.mEye);
     }
+    glDisable(GL_BLEND);
 
-    
     
     RenderSkyBox(projection,view);
     
-    glDisable(GL_BLEND);
 
     // TEMP copy raycast buffer to main to see
     glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);

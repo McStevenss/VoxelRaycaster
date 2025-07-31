@@ -9,7 +9,7 @@ out vec4 FragColor;
 void main()
 {
     vec4 texColor = texture(spriteTexture, TexCoord);
-    if (texColor.a == 0.0)
+    if (texColor.a < 0.1)
         discard;  // discard transparent pixels for alpha cutout
 
     FragColor = texColor;
