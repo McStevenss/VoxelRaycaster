@@ -16,20 +16,20 @@ uniform mat4 invView;
 uniform mat4 viewMatrix;
 uniform int voxelWorldSize;
 
-const int MAX_STEPS = 256;
-const int MAX_LIGHT_STEPS = 8;
+const int MAX_STEPS          = 256;
+const int MAX_LIGHT_STEPS    = 8;
 const int MAX_RAYTRACE_RANGE = 64;
 
+const float pointLightVoxelRadius = 3.0; // e.g., 6.0 voxels
+const float pointLightIntensity   = 1.0;  // e.g., 0.5
+const vec3 pointLightColor        = vec3(1.0,1.0,1.0); // e.g., vec3(1.0, 0.95, 0.8)
+const vec3 lightDir               = normalize(vec3(0.2, 1.0, 0.2));
 
 
-const float pointLightVoxelRadius = 4.0; // e.g., 6.0 voxels
-const vec3 pointLightColor = vec3(1.0,0.0,0.0); // e.g., vec3(1.0, 0.95, 0.8)
-const float pointLightIntensity = 1.0;  // e.g., 0.5
 
-// const vec3 lightDir = normalize(vec3(-1.0, 1.0, -1.0));
-const vec3 lightDir = normalize(vec3(0.2, 1.0, 0.2));
-// const vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0));
-
+#define USE_SPECULAR      1
+#define CAMERA_POINTLIGHT 1
+#define RAYTRACED_SHADOWS 1
 
 float voxelSize = 1.0;
 
@@ -240,51 +240,56 @@ void main() {
             vec3 baseColor = FragColor.rgb;
             float voxelWorldSizeF = float(voxelWorldSize);
             vec3 startShadowPos = (hitPos) / voxelWorldSizeF;
-            float light = 0.1;
-         
-            if(distance(cameraPos,hitPos) < MAX_RAYTRACE_RANGE)
-            {
-                if (isSkyLight(voxel,lightDir)) {
-                    vec3 viewDir = normalize(cameraPos - hitPos);
-                    vec3 halfDir = normalize(lightDir + viewDir);
-                    float spec = pow(max(dot(normal, halfDir), 0.0), 32.0);
-                    FragColor.rgb += spec * vec3(0.5,0.5,0.5);
-                 
-                    // light = voxelShadow(startShadowPos, lightDir);
+
+            #if RAYTRACED_SHADOWS
+                float light = 0.1;
+                if(distance(cameraPos,hitPos) < MAX_RAYTRACE_RANGE)
+                {
+
+                    #if USE_SPECULAR
+                        if (isSkyLight(voxel,lightDir)) {
+                            vec3 viewDir = normalize(cameraPos - hitPos);
+                            vec3 halfDir = normalize(lightDir + viewDir);
+                            float spec = pow(max(dot(normal, halfDir), 0.0), 32.0);
+                            FragColor.rgb += spec * vec3(0.5,0.5,0.5);
+                        
+                            // light = voxelShadow(startShadowPos, lightDir);
+                        }
+                    #endif
+
+                    light = voxelShadow(startShadowPos, lightDir);
                 }
-                light = voxelShadow(startShadowPos, lightDir);
-            }
-            else{
-                light = SkyLight(voxel,lightDir);
-                // light = 1.0;
-            }
+                else{
+                    light = SkyLight(voxel,lightDir);
+                    // light = 1.0;
+                }
+                FragColor.rgb *= light;
+            #endif
 
           
-            FragColor.rgb *= light;
             
 
             vec3 voxelHit = hitPos / voxelSize; // convert hit position to voxel space
             float voxelDist = distance(voxelHit, cameraPos / voxelSize);
 
-            if (voxelDist <= pointLightVoxelRadius) {
-                // Normalized direction to the camera
-                vec3 lightDirToCamera = normalize(cameraPos - hitPos);
+            #if CAMERA_POINTLIGHT
+                if (voxelDist <= pointLightVoxelRadius) {
+                    // Normalized direction to the camera
+                    vec3 lightDirToCamera = normalize(cameraPos - hitPos);
 
-                // Simple linear falloff for performance
-                float attenuation = 1.0 - (voxelDist / pointLightVoxelRadius);
-                attenuation = max(attenuation, 0.0);
+                    // Simple linear falloff for performance
+                    float attenuation = 1.0 - (voxelDist / pointLightVoxelRadius);
+                    attenuation = max(attenuation, 0.0);
 
-                // Lambert term
-                float NdotL = max(dot(normal, lightDirToCamera), 0.0);
+                    // Lambert term
+                    float NdotL = max(dot(normal, lightDirToCamera), 0.0);
 
-                // Final point light contribution
-                vec3 pointLight = pointLightColor * pointLightIntensity * NdotL * attenuation;
+                    // Final point light contribution
+                    vec3 pointLight = pointLightColor * pointLightIntensity * NdotL * attenuation;
 
-                FragColor.rgb += baseColor * pointLight;
-            }
-
-         
-
+                    FragColor.rgb += baseColor * pointLight;
+                }
+            #endif
 
             return;
         }
