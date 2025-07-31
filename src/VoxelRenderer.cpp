@@ -5,18 +5,40 @@
 #include <iostream>
 #include <cstdlib> // for rand()
 #include "VoxelTerrain.h"
+#include "BillboardSprite.h"
 
 VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     : mScreenWidth(width), mScreenHeight(height)
 {
     mTerrain = terrain;
     Init();
-    loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor);
-    loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall);
+    loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor,false);
+    loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall,false);
+    // loadTexture("textures/sprite.png", billboardSpriteTexture,true,true);
+    loadTexture("textures/sprites/spritesheet.png", billboardSpriteTexture,true,true);
+
+    int tilesPerRow = 10;
+    int tilesPerCol = 10;
+    glm::vec2 spriteScale(1.0f / tilesPerRow, 1.0f / tilesPerCol);
+
+    //Initialize buffers (Static)
+    BillboardSprite::InitBuffers();
+    BillboardSprite::SetTexture(billboardSpriteTexture, spriteScale);
+    BillboardSprite::SetShader(mBillboardShader);
+
+    int tileX = 3;
+    int tileY = 5; // zero-indexed
+    float billboardSize = 1.0f; 
+    
+    glm::vec2 spriteOffset(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
+
+    mSprites.emplace_back(glm::vec3(204.0f,224.0f,75.0f), billboardSize, spriteOffset);
+    mSprites.emplace_back(glm::vec3(200.0f,224.0f,76.0f), billboardSize, spriteOffset);
 }
 
 void VoxelRenderer::Init() {
     mShader = new Shader("shaders/voxel_raycast.vert", "shaders/voxel_raycast.frag");
+    mBillboardShader = new Shader("shaders/billboard.vert", "shaders/billboard.frag");
 
     InitFullscreenQuad();
 
@@ -56,9 +78,25 @@ void VoxelRenderer::Init() {
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);           
 }
 
-void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef){
+void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA){
     int w, h, n;
-    stbi_uc* colorData = stbi_load(path.c_str(), &w, &h, &n, 3);
+    stbi_uc* colorData;
+
+    if(flipVertically)
+    {        
+        stbi_set_flip_vertically_on_load(flipVertically);
+    }
+
+    if(isRGBA)
+    {
+        colorData = stbi_load(path.c_str(), &w, &h, &n, 4);
+    }
+
+    else
+    {
+        colorData = stbi_load(path.c_str(), &w, &h, &n, 3);
+    }
+
     if (!colorData) {
         std::cerr << "[VoxelRenderer] Error loading:" << path.c_str() << std::endl;
         exit(1);
@@ -66,7 +104,17 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef){
     
     glGenTextures(1, &textureRef);
     glBindTexture(GL_TEXTURE_2D, textureRef);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, colorData);
+
+    if(isRGBA)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorData);
+    }
+
+    else 
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, colorData);
+    }
+    
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Or GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -127,12 +175,25 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
     glBindVertexArray(0);
 
 
+
+    //################ DRAW BILLBOARDS/SPRITES #############
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    for (auto& sprite : mSprites) {  // store your sprites as a member
+        sprite.Draw(view, projection, camera.mEye);
+    }
+
+    glDisable(GL_BLEND);
+
+
     // TEMP copy raycast buffer to main to see
     glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(0, 0, mScreenWidth, mScreenHeight,
-                    0, 0, mScreenWidth, mScreenHeight,
-                    GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                      0, 0, mScreenWidth, mScreenHeight,
+                      GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
+                      GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default framebuffer
 }

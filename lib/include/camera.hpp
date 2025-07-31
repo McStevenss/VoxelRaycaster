@@ -28,6 +28,11 @@ class Camera{
     bool fpsControls = false;
     glm::vec3 mUpVector;
     glm::vec3 mRightVector;
+
+    float mNearPlane;
+    float mFarPlane;
+    float mAspectRatio;
+
     private:
         glm::mat4 mProjectionMatrix;
 

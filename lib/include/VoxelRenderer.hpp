@@ -7,6 +7,7 @@
 #include "Camera.hpp"
 #include "Shader.hpp"
 #include "VoxelTerrain.h"
+#include "BillboardSprite.h"
 
 class VoxelRenderer {
 public:
@@ -16,7 +17,8 @@ public:
     void RenderVoxels(const Camera& camera);
 
     bool isVoxel(glm::vec3 pos);
-    void loadTexture(const std::string &path, GLuint &textureRef);
+    // void loadTexture(const std::string &path, GLuint &textureRef);
+    void loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA=false);
     
 
 private:
@@ -29,8 +31,13 @@ private:
     GLuint voxelTexture;
     GLuint voxelSurfaceTexture_wall;
     GLuint voxelSurfaceTexture_floor;
+    GLuint billboardSpriteTexture;
     
+    std::vector<BillboardSprite> mSprites;
+
+
     Shader* mShader = nullptr;
+    Shader* mBillboardShader = nullptr;
     unsigned int mQuadVAO = 0;
     unsigned int mQuadVBO = 0;
     

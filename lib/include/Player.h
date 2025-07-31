@@ -28,7 +28,7 @@ class Player {
               
     private:
         SDL_Window* mGraphicsApplicationWindow;
-        const float PLAYER_HEIGHT = 0.5f;
+        const float PLAYER_HEIGHT = 0.8f;
         const float PLAYER_RADIUS = 0.25f;
 
         int mScreenWidth;

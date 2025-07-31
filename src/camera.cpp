@@ -5,11 +5,10 @@
 #include "Camera.hpp"
 
 
-Camera::Camera(){
-
-    // mEye = glm::vec3(0.0f, 0.0f, -1.0f);
-    // mEye = glm::vec3(64.0f, 64.0f, 0.0f);  
-    mEye = glm::vec3(199.0f, 228.0f, 68.0f);  
+Camera::Camera()
+{
+    //Default position
+    mEye = glm::vec3(0.0f, 0.0f, 0.0f);  
 
     // Assume we're looking out into the world (negative -Z)
     mViewDirection = glm::vec3(0.0f,0.0f,1.0f);
@@ -19,26 +18,32 @@ Camera::Camera(){
     mRightVector = glm::vec3(1.0f,0.0f,0.0f);
 }
 
-glm::mat4 Camera::GetViewMatrix() const{
+glm::mat4 Camera::GetViewMatrix() const
+{
     return glm::lookAt(mEye, mEye + mViewDirection, mUpVector);
 }
 
-glm::vec3 Camera::GetViewDirection() const{
+glm::vec3 Camera::GetViewDirection() const
+{
     return mViewDirection;
 }
 
-void Camera::SetProjectionMatrix(float fovy, float aspect, float near, float far){
+void Camera::SetProjectionMatrix(float fovy, float aspect, float near, float far)
+{
     mFovy = fovy;
-    mProjectionMatrix = glm::perspective(glm::radians(mFovy), aspect,near,far);
+    mFarPlane = far;
+    mNearPlane = near;
+    mAspectRatio = aspect;
+    mProjectionMatrix = glm::perspective(glm::radians(mFovy), mAspectRatio, mNearPlane, mFarPlane);
 };
 
-
-glm::mat4 Camera::GetProjectionMatrix() const{
+glm::mat4 Camera::GetProjectionMatrix() const
+{
     return mProjectionMatrix;
 };
 
-
-void Camera::MouseLook(int mouseX, int mouseY){
+void Camera::MouseLook(int mouseX, int mouseY)
+{
     glm::vec2 currentMouse = glm::vec2(mouseX,mouseY);
 
     static bool firstLook=true;
@@ -68,7 +73,8 @@ void Camera::MouseLook(int mouseX, int mouseY){
 
 }
 
-void Camera::MoveForward(float speed){
+void Camera::MoveForward(float speed)
+{
     if(fpsControls){
         glm::vec3 forward = glm::normalize(glm::vec3(mViewDirection.x, 0.0f, mViewDirection.z));
         mEye += forward * speed;
@@ -78,7 +84,8 @@ void Camera::MoveForward(float speed){
     }
 }
 
-void Camera::MoveBackward(float speed){
+void Camera::MoveBackward(float speed)
+{
     if(fpsControls){
         glm::vec3 forward = glm::normalize(glm::vec3(mViewDirection.x, 0.0f, mViewDirection.z));
         mEye -= forward * speed;
@@ -88,7 +95,8 @@ void Camera::MoveBackward(float speed){
     }
 }
 
-void Camera::MoveLeft(float speed){
+void Camera::MoveLeft(float speed)
+{
     if(fpsControls){
         glm::vec3 forward = glm::normalize(glm::vec3(mViewDirection.x, 0.0f, mViewDirection.z));
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -100,7 +108,8 @@ void Camera::MoveLeft(float speed){
     }
 }
 
-void Camera::MoveRight(float speed){
+void Camera::MoveRight(float speed)
+{
     if(fpsControls){
         glm::vec3 forward = glm::normalize(glm::vec3(mViewDirection.x, 0.0f, mViewDirection.z));
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -112,10 +121,12 @@ void Camera::MoveRight(float speed){
     }
 }
 
-void Camera::MoveUp(float speed){
+void Camera::MoveUp(float speed)
+{
     mEye +=  (mUpVector * speed);
 }
 
-void Camera::MoveDown(float speed){
+void Camera::MoveDown(float speed)
+{
     mEye -=  (mUpVector * speed);
 }

@@ -39,7 +39,8 @@ Engine::Engine()
 }
 
 
-void Engine::InitializeProgram(){
+void Engine::InitializeProgram()
+{
     //Initialize SDL
     std::cout << "[Engine] Initializing SDL...";
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
@@ -134,7 +135,6 @@ void Engine::MainLoop()
         renderer->RenderVoxels(mPlayer->mCamera);
         
         ImGui::Begin("Info panel");
-        // Begin the Info panel window
             float fps = 1.0f / deltaTime;
             ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", mPlayer->mPosition.x, mPlayer->mPosition.y, mPlayer->mPosition.z);
             ImGui::Text("Camera Speed: %.3f", mPlayer->mCamera.speed);
@@ -144,13 +144,11 @@ void Engine::MainLoop()
             ImGui::Checkbox("Toggle collision mode:", &mPlayer->collisionMode);
             ImGui::Checkbox("Toggle gravity:", &mPlayer->gravity);
         ImGui::End();
-        // Render ImGui
+        
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         
         SDL_GL_SwapWindow(mGraphicsApplicationWindow);
-
     }
 }
 
