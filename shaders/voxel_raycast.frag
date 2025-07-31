@@ -244,9 +244,14 @@ void main() {
          
             if(distance(cameraPos,hitPos) < MAX_RAYTRACE_RANGE)
             {
-                // if (isSkyLight(voxel,lightDir)) {
+                if (isSkyLight(voxel,lightDir)) {
+                    vec3 viewDir = normalize(cameraPos - hitPos);
+                    vec3 halfDir = normalize(lightDir + viewDir);
+                    float spec = pow(max(dot(normal, halfDir), 0.0), 32.0);
+                    FragColor.rgb += spec * vec3(0.5,0.5,0.5);
+                 
                     // light = voxelShadow(startShadowPos, lightDir);
-                // }
+                }
                 light = voxelShadow(startShadowPos, lightDir);
             }
             else{
@@ -254,8 +259,9 @@ void main() {
                 // light = 1.0;
             }
 
+          
             FragColor.rgb *= light;
-
+            
 
             vec3 voxelHit = hitPos / voxelSize; // convert hit position to voxel space
             float voxelDist = distance(voxelHit, cameraPos / voxelSize);
