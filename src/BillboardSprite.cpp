@@ -11,7 +11,8 @@ GLuint BillboardSprite::sTexture = 0;
 glm::vec2 BillboardSprite::sUvScale = glm::vec2(0.0f, 0.0f);
 
 BillboardSprite::BillboardSprite(glm::vec3 pos, float s, glm::vec2 spriteOffset)
-    : position(pos), size(s), uvOffset(spriteOffset) {}
+: position(glm::vec3(pos.x + 0.5f, pos.y, pos.z + 0.5f)), size(s), uvOffset(spriteOffset) {}
+
 
 void BillboardSprite::InitBuffers() {
     if (VAO != 0) return; // already initialized

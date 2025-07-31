@@ -28,12 +28,18 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
 
     int tileX = 3;
     int tileY = 5; // zero-indexed
-    float billboardSize = 1.0f; 
+    // float billboardSize = 1.0f; 
+    float billboardSize = 0.8f; 
     
     glm::vec2 spriteOffset(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
 
     mSprites.emplace_back(glm::vec3(204.0f,224.0f,75.0f), billboardSize, spriteOffset);
     mSprites.emplace_back(glm::vec3(200.0f,224.0f,76.0f), billboardSize, spriteOffset);
+
+    tileY = 4;
+    spriteOffset = glm::vec2(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
+
+    mSprites.emplace_back(glm::vec3(205.0f,218.0f,76.0f), billboardSize, spriteOffset);
 }
 
 void VoxelRenderer::Init() {
@@ -185,10 +191,11 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
         sprite.Draw(view, projection, camera.mEye);
     }
 
-    glDisable(GL_BLEND);
-
-
+    
+    
     RenderSkyBox(projection,view);
+    
+    glDisable(GL_BLEND);
 
     // TEMP copy raycast buffer to main to see
     glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);
