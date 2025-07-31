@@ -23,7 +23,7 @@ const int MAX_RAYTRACE_RANGE = 64;
 
 
 const float pointLightVoxelRadius = 4.0; // e.g., 6.0 voxels
-const vec3 pointLightColor = vec3(1.0,0.0,0.0);       // e.g., vec3(1.0, 0.95, 0.8)
+const vec3 pointLightColor = vec3(1.0,0.0,0.0); // e.g., vec3(1.0, 0.95, 0.8)
 const float pointLightIntensity = 1.0;  // e.g., 0.5
 
 // const vec3 lightDir = normalize(vec3(-1.0, 1.0, -1.0));
@@ -238,13 +238,7 @@ void main() {
                 FragColor = texture(voxelSurfaceTextureWall, voxelUV);
 
             vec3 baseColor = FragColor.rgb;
-
-            // float bias = 0.0025;
-            float bias = 0.00;
             float voxelWorldSizeF = float(voxelWorldSize);
-            // vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
-            // vec3 startShadowPos = (hitPos + normal * bias) / voxelWorldSizeF;
-            // vec3 startShadowPos = (hitPos + normal * 0.0005) / voxelWorldSizeF;
             vec3 startShadowPos = (hitPos) / voxelWorldSizeF;
             float light = 0.1;
          
