@@ -86,42 +86,27 @@ void VoxelRenderer::Init() {
 }
 
 void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA){
+
     int w, h, n;
     stbi_uc* colorData;
+    stbi_set_flip_vertically_on_load(flipVertically);
 
-    if(flipVertically)
-    {        
-        stbi_set_flip_vertically_on_load(flipVertically);
-    }
-
-    if(isRGBA)
-    {
-        colorData = stbi_load(path.c_str(), &w, &h, &n, 4);
-    }
-
-    else
-    {
-        colorData = stbi_load(path.c_str(), &w, &h, &n, 3);
-    }
-
+    int desiredChannels = isRGBA ? 4 : 3;
+    colorData = stbi_load(path.c_str(), &w, &h, &n, desiredChannels);
+     
     if (!colorData) {
         std::cerr << "[VoxelRenderer] Error loading:" << path.c_str() << std::endl;
         exit(1);
     }
     
+    GLenum format = isRGBA ? GL_RGBA : GL_RGB;
+    GLenum internalFormat = isRGBA ? GL_RGBA8 : GL_RGB8;
+
     glGenTextures(1, &textureRef);
     glBindTexture(GL_TEXTURE_2D, textureRef);
 
-    if(isRGBA)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorData);
-    }
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, w, h, 0, format, GL_UNSIGNED_BYTE, colorData);
 
-    else 
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, colorData);
-    }
-    
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Or GL_NEAREST
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
