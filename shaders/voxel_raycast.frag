@@ -64,8 +64,7 @@ float rayTracedSoftShadow(vec3 startPos, vec3 lightDir) {
 
             float density = texelFetch(voxelTexture, voxel, 0).r;
             // shadow = min(shadow, 0.1);
-            // if (density > 0.1) {
-            if (density > 0.1 || texture(voxelTexture, (samplePos + 0.001) ).r > 0.1) {
+            if (density > 0.1) {
                 float dist = length(samplePos - startPos) * float(voxelWorldSize);
                 // Darker shadows for nearby occluders
                 float shadowAmount = smoothstep(0.0, 10.0, dist);
