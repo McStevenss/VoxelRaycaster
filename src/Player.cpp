@@ -179,7 +179,7 @@ void Player::Input()
                     mCamera.speed = 0.0;  
             }
         }
-        else if(e.type == SDL_MOUSEBUTTONUP)
+        else if(e.type == SDL_MOUSEBUTTONUP && !lockMouse)
         {
             shouldRemove = true;
         }
