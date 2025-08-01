@@ -23,6 +23,16 @@ void Player::Update(float deltaTime, VoxelTerrain *terrain)
     glm::vec3 oldPos = mPosition;
         
     Input();
+
+    if(shouldRemove){
+        float voxelRGB[4];
+        glReadPixels(mScreenWidth / 2, mScreenHeight / 2, 1, 1, GL_RGBA, GL_FLOAT, voxelRGB);
+        glm::ivec3 voxelXYZ = glm::floor(glm::vec3(voxelRGB[0], voxelRGB[1], voxelRGB[2]) * float(terrain->VoxelWorldSize));
+        terrain->setVoxel(voxelXYZ.x+1, voxelXYZ.y+1, voxelXYZ.z, 0);
+        terrain->updateVoxelGPU(voxelXYZ.x+1, voxelXYZ.y+1, voxelXYZ.z);
+
+        shouldRemove = false;
+    }
     
     inAir = true;
     if(gravity)
@@ -168,6 +178,10 @@ void Player::Input()
                 if(mCamera.speed < 0.0)
                     mCamera.speed = 0.0;  
             }
+        }
+        else if(e.type == SDL_MOUSEBUTTONUP)
+        {
+            shouldRemove = true;
         }
 
         // Feed events to ImGui

@@ -19,19 +19,19 @@ uniform int voxelWorldSize;
 const int MAX_STEPS          = 256;
 const int MAX_LIGHT_STEPS    = 8;
 const int MAX_RAYTRACE_RANGE = 64;
+const float SHADOW_STRENGHT  = 0.4;
 
 const float pointLightVoxelRadius = 3.0; // e.g., 6.0 voxels
 const float pointLightIntensity   = 1.0;  // e.g., 0.5
 const vec3 pointLightColor        = vec3(1.0,1.0,1.0); // e.g., vec3(1.0, 0.95, 0.8)
 const vec3 lightDir               = normalize(vec3(0.2, 1.0, 0.2));
-
+float voxelSize                   = 1.0;
 
 
 #define USE_SPECULAR      1
-#define CAMERA_POINTLIGHT 1
+#define CAMERA_POINTLIGHT 0
 #define RAYTRACED_SHADOWS 1
-
-float voxelSize = 1.0;
+#define BASIC_LIGHT       0
 
 bool isSkyLight(ivec3 voxel, vec3 lightDir) {
     vec3 pos = vec3(voxel) + 0.5; // center of voxel
@@ -56,50 +56,9 @@ float SkyLight(ivec3 voxel, vec3 lightDir) {
 
         float density = texture(voxelTexture, pos / float(voxelWorldSize)).r;
         if (density > 0.1)
-            return 0.3; // blocked
+            return SHADOW_STRENGHT; // blocked
     }
     return 1.0;
-}
-
-
-float rayTracedSoftShadow(vec3 startPos, vec3 lightDir) {
-    float shadow = 1.0;
-    float voxelSize = 1.0 / float(voxelWorldSize);
-
-    // Start exactly at the bias, not a full step away
-    vec3 currentPos = startPos;
-    float stepSize = voxelSize * 0.1; // small near the start
-
-    for (int i = 0; i < MAX_LIGHT_STEPS; i++) {
-        // Stop if we leave the voxel volume
-        if (any(lessThan(currentPos, vec3(0.0))) ||
-            any(greaterThanEqual(currentPos, vec3(1.0)))) {
-            break;
-        }
-
-        // --- Multi-sample along step to avoid tunneling ---
-        for (int s = 0; s < 2; s++) {
-            // vec3 samplePos = currentPos + lightDir * (stepSize * (s / 2.0));
-            vec3 samplePos = currentPos + lightDir * (stepSize * (float(s) / 2.0));
-
-            // ivec3 voxel = ivec3(floor(samplePos * voxelWorldSize));
-            ivec3 voxel = ivec3(floor(samplePos * voxelWorldSize + lightDir * (0.5 / voxelWorldSize)));
-
-            float density = texelFetch(voxelTexture, voxel, 0).r;
-            // shadow = min(shadow, 0.1);
-            if (density > 0.1) {
-                float dist = length(samplePos - startPos) * float(voxelWorldSize);
-                // Darker shadows for nearby occluders
-                float shadowAmount = smoothstep(0.0, 10.0, dist);
-                shadow = min(shadow, shadowAmount);
-                if (shadow <= 0.1) return 0.1; // Early exit
-            }
-        }
-
-        currentPos += lightDir * stepSize;
-    }
-
-    return clamp(shadow, 0.1, 1.0);
 }
 
 float voxelShadow(vec3 startPos, vec3 dir) {
@@ -119,7 +78,7 @@ float voxelShadow(vec3 startPos, vec3 dir) {
             break;
 
         float density = texelFetch(voxelTexture, voxel, 0).r;
-        if (density > 0.1) return 0.1;
+        if (density > 0.1) return SHADOW_STRENGHT;
 
         if (nextT.x < nextT.y && nextT.x < nextT.z) {
             voxel.x += int(rayStep.x);
@@ -174,10 +133,9 @@ void main() {
 
     tmin = max(tmin, 0.0);
     float tCurrent = tmin;  // <-- Declare and initialize here
-
+    
     vec3 pos = rayOrigin + rayDir * tCurrent;
-
-    ivec3 voxel = ivec3(floor(pos / voxelSize));
+    ivec3 voxel = ivec3(floor(pos.x), floor(pos.y), floor(pos.z));
     vec3 rayStep = sign(rayDir);
 
     vec3 tDelta = abs(voxelSize / rayDir);
@@ -192,16 +150,22 @@ void main() {
     int faceDir = 0;
     ivec3 lastVoxel = voxel;
     vec3 normal = vec3(0.0);
+    bool isCenter = abs(TexCoords.x - 0.5) < 0.001 && abs(TexCoords.y - 0.5) < 0.001;
+    ivec3 centerVoxel = ivec3(-1); // invalid initially
 
     for (int i = 0; i < MAX_STEPS; ++i) {
         vec3 texCoord = vec3(voxel) / float(voxelWorldSize);
         if (any(lessThan(texCoord, vec3(0.0))) || any(greaterThanEqual(texCoord, vec3(1.0))))
             break;
 
+        if (isCenter && centerVoxel.x < 0) {
+            // Save the first voxel the center ray is in
+            centerVoxel = voxel;
+        }
+
         float density = texture(voxelTexture, texCoord).r;
         // Hit detected
         if (density > 0.1) {
-
 
             //Calculate depth to populate the depthbuffer
             vec3 hitPos = rayOrigin + rayDir * tCurrent;
@@ -232,20 +196,22 @@ void main() {
 
             voxelUV = clamp(voxelUV, 0.0, 1.0);
 
+            
             if (face == 1)
                 FragColor = texture(voxelSurfaceTextureFloor, voxelUV);
             else
                 FragColor = texture(voxelSurfaceTextureWall, voxelUV);
 
+
+
             vec3 baseColor = FragColor.rgb;
             float voxelWorldSizeF = float(voxelWorldSize);
             vec3 startShadowPos = (hitPos) / voxelWorldSizeF;
-
             #if RAYTRACED_SHADOWS
-                float light = 0.1;
+                float light = 0.7;
                 if(distance(cameraPos,hitPos) < MAX_RAYTRACE_RANGE)
                 {
-
+                 
                     #if USE_SPECULAR
                         if (isSkyLight(voxel,lightDir)) {
                             vec3 viewDir = normalize(cameraPos - hitPos);
@@ -263,10 +229,17 @@ void main() {
                     light = SkyLight(voxel,lightDir);
                     // light = 1.0;
                 }
+          
                 FragColor.rgb *= light;
+
             #endif
 
-          
+            #if BASIC_LIGHT
+                float basic_light = 1.0;
+
+                basic_light = SkyLight(voxel,lightDir);
+                FragColor.rgb *= basic_light;
+            #endif
             
 
             vec3 voxelHit = hitPos / voxelSize; // convert hit position to voxel space
@@ -287,9 +260,16 @@ void main() {
                     // Final point light contribution
                     vec3 pointLight = pointLightColor * pointLightIntensity * NdotL * attenuation;
 
+
                     FragColor.rgb += baseColor * pointLight;
                 }
             #endif
+
+            
+            if (isCenter) {
+                // Override output with encoded voxel
+                FragColor = vec4(vec3(voxel) / float(voxelWorldSize), 1.0);
+            }
 
             return;
         }

@@ -37,10 +37,10 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     mSprites.emplace_back(glm::vec3(200.0f,224.0f,76.0f), billboardSize, spriteOffset);
 
 
-    tileY = 4;
-    spriteOffset = glm::vec2(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
+    // tileY = 4;
+    // spriteOffset = glm::vec2(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
 
-    mSprites.emplace_back(glm::vec3(205.0f,218.0f,76.0f), billboardSize, spriteOffset);
+    // mSprites.emplace_back(glm::vec3(205.0f,218.0f,76.0f), billboardSize, spriteOffset);
     
 }
 
@@ -84,7 +84,10 @@ void VoxelRenderer::Init() {
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);           
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);      
+    
+    
+    mTerrain->VoxelTexture = voxelTexture;
 }
 
 void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA){

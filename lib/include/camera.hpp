@@ -28,6 +28,7 @@ class Camera{
     bool fpsControls = false;
     glm::vec3 mUpVector;
     glm::vec3 mRightVector;
+    glm::vec3 mViewDirection;
 
     float mNearPlane;
     float mFarPlane;
@@ -36,7 +37,6 @@ class Camera{
     private:
         glm::mat4 mProjectionMatrix;
 
-        glm::vec3 mViewDirection;
         // glm::vec3 mUpVector;
         // glm::vec3 mRightVector;
         glm::vec2 mOldMousePosition;

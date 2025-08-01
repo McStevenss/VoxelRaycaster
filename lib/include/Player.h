@@ -34,6 +34,8 @@ class Player {
         int mScreenWidth;
         int mScreenHeight;
 
+        bool shouldRemove = false;
+
         const glm::vec2 offsets[8] = {
             { PLAYER_RADIUS,  0.0f },
             {-PLAYER_RADIUS,  0.0f },
