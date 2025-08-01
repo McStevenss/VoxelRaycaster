@@ -5,4 +5,4 @@ Small Progress
 ![Alt text](textures/md2.png)
 
 Voxel editing, specular reflections, raytraced shadows :)
-![Alt text](textures/md3.png)
+![Alt text](textures/md3_1.png)
