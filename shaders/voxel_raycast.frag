@@ -14,7 +14,8 @@ uniform mat4 projectionMatrix;
 uniform mat4 invView;
 uniform mat4 viewMatrix;
 uniform int voxelWorldSize;
-uniform vec2 uvVoxelScale;
+uniform float VoxelScaleX;
+uniform float VoxelScaleY;
 uniform int tilesPerCol;
 
 const int MAX_STEPS          = 256;
@@ -216,15 +217,19 @@ void main() {
 
             float voxelID = floor(density * 255.0); // tile index
             float xOffset = (face == 1) ? 1.0 : 0.0; // column offset (floor/ceiling vs walls)
-            float yOffset = 1;  // row offset, inverted because of UV coords
-            voxelUV.x = voxelUV.x * 0.1 + (xOffset * 0.1);
-            voxelUV.y = voxelUV.y * 0.1 + (tilesPerCol - 1 - voxelID) * 0.1;
+            float yOffset = (tilesPerCol - 1 - voxelID) * VoxelScaleY;;  // row offset, inverted because of UV coords
+            voxelUV.x = voxelUV.x * VoxelScaleX + (xOffset * VoxelScaleX);
+            voxelUV.y = voxelUV.y * VoxelScaleY + yOffset;
 
-            // voxelUV = clamp(voxelUV, 0.0, 1.0);
-            FragColor = texture(voxelSpriteSheet, voxelUV);
+            voxelUV = clamp(voxelUV, 0.0, 1.0);
+
+            vec4 textureColor = texture(voxelSpriteSheet, voxelUV);
+            FragColor = textureColor;
 
 
-            vec3 baseColor = FragColor.rgb;
+            vec3 baseColor = textureColor.rgb;
+
+
             float voxelWorldSizeF = float(voxelWorldSize);
             vec3 startShadowPos = (hitPos) / voxelWorldSizeF;
             #if RAYTRACED_SHADOWS
@@ -242,7 +247,6 @@ void main() {
                 }
                 else{
                     light = SkyLight(voxel,lightDir);
-                    // light = 1.0;
                 }
           
                 FragColor.rgb *= light;
@@ -274,8 +278,6 @@ void main() {
 
                     // Final point light contribution
                     vec3 pointLight = pointLightColor * pointLightIntensity * NdotL * attenuation;
-
-
                     FragColor.rgb += baseColor * pointLight;
                 }
             #endif

@@ -15,16 +15,17 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor,false);
     loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall,false);
     loadTexture("textures/sprites/spritesheet.png", billboardSpriteTexture,true,true,false);
-    loadTexture("textures/sprites/voxelspritesheet.png", voxelSpriteSheet,true,true, false);
+    loadTexture("textures/sprites/voxelspritesheet.png", voxelSpriteSheet,true,true, true);
     // loadTexture("textures/sprites/voxelspritesheet_v2.png", voxelSpriteSheet,true,true, true);
 
-    float tilesPerRow = 10;
     // int tilesPerCol = 10;
+    tilesPerRow = 10;
     tilesPerCol = 10;
     // int tilesPerCol = 10;
     glm::vec2 spriteScale(1.0f / tilesPerRow, 1.0f / tilesPerCol);
 
-    glm::vec2 uvVoxelScale = glm::vec2(1.0f / 10.0f, 1.0f / 10.0f);
+    VoxelScaleX = 1.0f / tilesPerRow;
+    VoxelScaleY = 1.0f / tilesPerCol;
     // glm::vec2 uvVoxelScale = spriteScale;
 
     //Initialize buffers (Static)
@@ -101,16 +102,6 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, boo
     int desiredChannels = isRGBA ? 4 : 3;
     colorData = stbi_load(path.c_str(), &w, &h, &n, desiredChannels);
      
-    // if (isRGBA) {
-    //     for (int i = 0; i < w * h; i++) {
-    //         float alpha = colorData[i * 4 + 3] / 255.0f;
-    //         colorData[i * 4 + 0] = static_cast<unsigned char>(colorData[i * 4 + 0] * alpha);
-    //         colorData[i * 4 + 1] = static_cast<unsigned char>(colorData[i * 4 + 1] * alpha);
-    //         colorData[i * 4 + 2] = static_cast<unsigned char>(colorData[i * 4 + 2] * alpha);
-    //     }
-    // }
-
-
     if (!colorData) {
         std::cerr << "[VoxelRenderer] Error loading:" << path.c_str() << std::endl;
         exit(1);
@@ -118,8 +109,8 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, boo
     
     GLenum format = isRGBA ? GL_RGBA : GL_RGB;
     GLenum internalFormat = isRGBA ? GL_RGBA8 : GL_RGB8;
-    // GLenum min_filter = useMipMap ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
-    GLenum min_filter = useMipMap ? GL_LINEAR_MIPMAP_LINEAR: GL_NEAREST;
+    GLenum min_filter = useMipMap ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
+    // GLenum min_filter = useMipMap ? GL_LINEAR_MIPMAP_LINEAR: GL_NEAREST;
 
     glGenTextures(1, &textureRef);
     glBindTexture(GL_TEXTURE_2D, textureRef);
@@ -167,7 +158,8 @@ void VoxelRenderer::RenderVoxels(const Camera& camera)
     mShader->setMat4("invView",invView);
     mShader->setMat4("viewMatrix",view);
     mShader->setInt("voxelWorldSize",mTerrain->VoxelWorldSize);
-    mShader->setVec2("uvVoxelScale", uvVoxelScale);
+    mShader->setFloat("VoxelScaleX", VoxelScaleX);
+    mShader->setFloat("VoxelScaleY", VoxelScaleY);
     mShader->setInt("tilesPerCol", tilesPerCol);
     
 

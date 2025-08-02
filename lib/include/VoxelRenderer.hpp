@@ -42,6 +42,8 @@ private:
 
     glm::vec2 uvVoxelOffset; // Bottom-left of tile in normalized UV
     glm::vec2 uvVoxelScale;  // Tile size in normalized UV
+    float VoxelScaleX;
+    float VoxelScaleY;
     
     std::vector<BillboardSprite> mSprites;
 
@@ -56,6 +58,7 @@ private:
     unsigned int mColorTexture = 0;
     unsigned int mDepthTexture = 0;
     float tilesPerCol;
+    float tilesPerRow;
     // unsigned int voxelTilesPerRow;
     std::vector<GLubyte> voxels;
 
