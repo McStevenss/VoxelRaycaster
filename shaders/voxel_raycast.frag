@@ -71,7 +71,7 @@ float SkyLight(ivec3 voxel, vec3 lightDir) {
             break;
 
         float density = texture(voxelTexture, pos / float(voxelWorldSize)).r;
-        if (density > 0.1)
+        if (density != 0.0)
             return SHADOW_STRENGHT; // blocked
     }
     return 1.0;
@@ -94,7 +94,7 @@ float voxelShadow(vec3 startPos, vec3 dir) {
             break;
 
         float density = texelFetch(voxelTexture, voxel, 0).r;
-        if (density > 0.1) return SHADOW_STRENGHT;
+        if (density != 0.0) return SHADOW_STRENGHT;
 
         if (nextT.x < nextT.y && nextT.x < nextT.z) {
             voxel.x += int(rayStep.x);
@@ -181,7 +181,7 @@ void main() {
 
         float density = texture(voxelTexture, texCoord).r;
         // Hit detected
-        if (density > 0.0) {
+        if (density != 0.0) {
 
             //Calculate depth to populate the depthbuffer
             vec3 hitPos = rayOrigin + rayDir * tCurrent;
