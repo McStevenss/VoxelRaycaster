@@ -24,18 +24,20 @@ void Player::Update(float deltaTime, VoxelTerrain *terrain)
         
     Input();
 
-    if(shouldRemove){
-        float voxelRGB[4];
-        glReadPixels(mScreenWidth / 2, mScreenHeight / 2, 1, 1, GL_RGBA, GL_FLOAT, voxelRGB);
-        glm::ivec3 voxelXYZ = glm::floor(glm::vec3(voxelRGB[0], voxelRGB[1], voxelRGB[2]) * float(terrain->VoxelWorldSize));
-        terrain->setVoxel(voxelXYZ.x+1, voxelXYZ.y+1, voxelXYZ.z, 0);
-        terrain->updateVoxelGPU(voxelXYZ.x+1, voxelXYZ.y+1, voxelXYZ.z);
+    if(removeBlock || addBlock)
+    {  
+        glm::ivec3 targetVoxel = terrain->decodeVoxel(mScreenWidth,mScreenHeight,addBlock);
+        int densityValue = removeBlock ? 0 : mChosenBlock;
 
-        shouldRemove = false;
+        terrain->setVoxel(targetVoxel.x,targetVoxel.y,targetVoxel.z, densityValue);
+        terrain->updateVoxelGPU(targetVoxel.x,targetVoxel.y,targetVoxel.z);
+ 
+        removeBlock = false;
+        addBlock = false;
     }
     
     inAir = true;
-    if(gravity)
+    if(mGravity)
     {
         mVelocity.y += gravityConstant * deltaTime;
         mCamera.mEye += mVelocity * deltaTime;
@@ -115,7 +117,7 @@ void Player::Update(float deltaTime, VoxelTerrain *terrain)
         }
     }
 
-    mCamera.fpsControls = gravity;
+    mCamera.fpsControls = mGravity;
 }
 
 bool Player::checkHorizontalCollision(const glm::vec3& centerPos, float yOffset, VoxelTerrain *terrain) 
@@ -136,6 +138,11 @@ bool Player::checkHorizontalCollision(const glm::vec3& centerPos, float yOffset,
         if (terrain->isVoxel(point)) return true;
     }
     return false;
+}
+
+int Player::getChosenBlock()
+{
+    return mChosenBlock;
 }
 
 void Player::Input()
@@ -179,10 +186,33 @@ void Player::Input()
                     mCamera.speed = 0.0;  
             }
         }
-        else if(e.type == SDL_MOUSEBUTTONUP && !lockMouse)
+        if(e.type == SDL_MOUSEBUTTONDOWN && !lockMouse)
         {
-            shouldRemove = true;
+            if(e.button.button == SDL_BUTTON_LEFT){
+                if(!mb_one_PreviouslyPressed){
+                    removeBlock = true;
+                    mb_one_PreviouslyPressed = true;
+                }
+            }
+            
+            if(e.button.button == SDL_BUTTON_RIGHT){
+                if(!mb_two_PreviouslyPressed){
+                    addBlock = true;
+                    mb_two_PreviouslyPressed = true;
+                }
+            }
+
         }
+
+        if(e.type == SDL_MOUSEBUTTONUP && !lockMouse){
+            if(e.button.button == SDL_BUTTON_LEFT){
+                mb_one_PreviouslyPressed = false;
+             }
+            if(e.button.button == SDL_BUTTON_RIGHT){
+                mb_two_PreviouslyPressed = false;
+            }
+        }
+        
 
         // Feed events to ImGui
         ImGui_ImplSDL2_ProcessEvent(&e);
@@ -192,6 +222,50 @@ void Player::Input()
     {
         mQuit = true;
     }
+    if (state[SDL_SCANCODE_G])
+    {
+        if(!gKeyPreviouslyPressed){
+            mGravity = !mGravity;
+            gKeyPreviouslyPressed = true;
+        }
+    }
+    else
+    {
+        gKeyPreviouslyPressed = false;
+    }
+
+
+    if (state[SDL_SCANCODE_1])
+    {
+        mChosenBlock = 1;
+    }
+
+    if (state[SDL_SCANCODE_2])
+    {
+        mChosenBlock = 2;
+    }
+
+    if (state[SDL_SCANCODE_3])
+    {
+        mChosenBlock = 3;
+    }
+
+    if (state[SDL_SCANCODE_4])
+    {
+        mChosenBlock = 4;
+    }
+
+    if (state[SDL_SCANCODE_5])
+    {
+        mChosenBlock = 5;
+    }
+
+    if (state[SDL_SCANCODE_6])
+    {
+        mChosenBlock = 6;
+    }
+
+
     if (state[SDL_SCANCODE_W])
     {
         mCamera.MoveForward(mCamera.speed);
@@ -210,7 +284,7 @@ void Player::Input()
     }
     if (state[SDL_SCANCODE_SPACE]) 
     {
-        if (gravity) 
+        if (mGravity) 
         {
             if (!inAir) 
             {
@@ -229,12 +303,12 @@ void Player::Input()
     }
 
     //Lock/Unlock mouse to interact with gui
-    if (state[SDL_SCANCODE_F])
+    if (state[SDL_SCANCODE_Q])
     {
         SDL_SetRelativeMouseMode(SDL_TRUE);
         lockMouse = false;
     }
-    if (state[SDL_SCANCODE_G])
+    if (state[SDL_SCANCODE_E])
     {
         SDL_SetRelativeMouseMode(SDL_FALSE);
         lockMouse = true;

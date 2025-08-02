@@ -26,9 +26,8 @@ class VoxelTerrain {
         std::vector<GLubyte> getVoxels();
         void setVoxel(int x, int y, int z, uint8_t value);
         void updateVoxelGPU(int x, int y, int z);
+        glm::ivec3 decodeVoxel(int mScreenWidth, int mScreenHeight, bool addBlock);
         int VoxelWorldSize = 256;
-        Ray computeCameraRay(glm::vec3 viewDir, glm::vec3 cameraPos, glm::mat4 invProjection, glm::mat4 invView);
-        VoxelHit raycastVoxels(Ray ray, int maxSteps);
 
         GLuint VoxelTexture;
 

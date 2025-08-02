@@ -136,14 +136,17 @@ void Engine::MainLoop()
         
         ImGui::Begin("Info panel");
             float fps = 1.0f / deltaTime;
-            
+            int playerChosenBlock = mPlayer->getChosenBlock();
             ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", mPlayer->mPosition.x, mPlayer->mPosition.y, mPlayer->mPosition.z);
             ImGui::Text("Camera View Direction: (%.1f, %.1f, %.1f)", mPlayer->mCamera.mViewDirection.x, mPlayer->mCamera.mViewDirection.y, mPlayer->mCamera.mViewDirection.z);
             ImGui::Text("Camera Speed: %.3f", mPlayer->mCamera.speed);
             ImGui::Text("FPS: %.3f", fps);
+
+            ImGui::Text("[Q] Disable mouse | [E]nable Mouse");
             ImGui::Text("In Air: %s", mPlayer->inAir ? "true" : "false");
             ImGui::Checkbox("Collisions", &mPlayer->collisionMode);
-            ImGui::Checkbox("Gravity", &mPlayer->gravity);
+            ImGui::Checkbox("[G]ravity", &mPlayer->mGravity);
+            ImGui::Text("Chosen Block: %i", playerChosenBlock);
         ImGui::End();
         
         ImGui::Render();

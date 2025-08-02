@@ -22,7 +22,7 @@ public:
 
     bool isVoxel(glm::vec3 pos);
     // void loadTexture(const std::string &path, GLuint &textureRef);
-    void loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA=false);
+    void loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA=false, bool useMipMap=true);
     void RenderSkyBox(const glm::mat4& projection, const glm::mat4& view);
  
 
@@ -38,6 +38,10 @@ private:
     GLuint voxelSurfaceTexture_wall;
     GLuint voxelSurfaceTexture_floor;
     GLuint billboardSpriteTexture;
+    GLuint voxelSpriteSheet;
+
+    glm::vec2 uvVoxelOffset; // Bottom-left of tile in normalized UV
+    glm::vec2 uvVoxelScale;  // Tile size in normalized UV
     
     std::vector<BillboardSprite> mSprites;
 
@@ -51,7 +55,8 @@ private:
     unsigned int mFBO = 0;
     unsigned int mColorTexture = 0;
     unsigned int mDepthTexture = 0;
-
+    float tilesPerCol;
+    // unsigned int voxelTilesPerRow;
     std::vector<GLubyte> voxels;
 
     void InitFullscreenQuad();

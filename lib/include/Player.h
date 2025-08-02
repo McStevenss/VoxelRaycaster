@@ -15,12 +15,13 @@ class Player {
         // void Update(float deltaTime, VoxelTerrain &terrain);
         void Update(float deltaTime, VoxelTerrain *terrain);
         bool checkHorizontalCollision(const glm::vec3& centerPos, float yOffset, VoxelTerrain *terrain);
+        int getChosenBlock();
         void Input();
         
         // UI 
         bool mQuit = false; 
         bool lockMouse = false;
-        bool gravity = false;
+        bool mGravity = false;
         bool inAir = true;
         bool collisionMode = true;
         Camera mCamera;
@@ -34,7 +35,9 @@ class Player {
         int mScreenWidth;
         int mScreenHeight;
 
-        bool shouldRemove = false;
+        bool removeBlock = false;
+        bool addBlock = false;
+        int mChosenBlock = 0;
 
         const glm::vec2 offsets[8] = {
             { PLAYER_RADIUS,  0.0f },
@@ -52,6 +55,8 @@ class Player {
         int jumpVelocity = 5;
         
 
-
+        bool gKeyPreviouslyPressed = false;
+        bool mb_one_PreviouslyPressed = false;
+        bool mb_two_PreviouslyPressed = false;
 
 };

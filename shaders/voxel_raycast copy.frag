@@ -71,7 +71,7 @@ float SkyLight(ivec3 voxel, vec3 lightDir) {
             break;
 
         float density = texture(voxelTexture, pos / float(voxelWorldSize)).r;
-        if (density > 0.1)
+        if (density != 0.0)
             return SHADOW_STRENGHT; // blocked
     }
     return 1.0;
@@ -94,7 +94,7 @@ float voxelShadow(vec3 startPos, vec3 dir) {
             break;
 
         float density = texelFetch(voxelTexture, voxel, 0).r;
-        if (density > 0.1) return SHADOW_STRENGHT;
+        if (density != 0.0) return SHADOW_STRENGHT;
 
         if (nextT.x < nextT.y && nextT.x < nextT.z) {
             voxel.x += int(rayStep.x);
@@ -135,6 +135,8 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDir, out float tmin, out float tmax) {
     return tmax >= max(tmin, 0.0);
 }
 
+
+
 void main() {
     float STEP_SIZE = 1.0 / voxelWorldSize;
 
@@ -143,7 +145,8 @@ void main() {
 
     float tmin, tmax;
     if (!intersectBox(cameraPos / voxelWorldSize, rayDir / voxelWorldSize, tmin, tmax)) {
-        FragColor = vec4(0.5, 0.5, 0.5, 1.0); // Background color
+        // FragColor = vec4(0.5, 0.5, 0.5, 1.0); // Background color
+        FragColor = vec4(1.0, 1.0, 1.0, 1.0); // Background color
         return;
     }
 
@@ -181,7 +184,7 @@ void main() {
 
         float density = texture(voxelTexture, texCoord).r;
         // Hit detected
-        if (density > 0.0) {
+        if (density != 0.0) {
 
             //Calculate depth to populate the depthbuffer
             vec3 hitPos = rayOrigin + rayDir * tCurrent;
@@ -197,33 +200,48 @@ void main() {
             vec3 localPos = pos - voxelWorldPos;
             vec3 local = clamp(localPos / voxelSize, 0.0, 1.0);
 
-
-
             vec2 voxelUV = vec2(0.0);
-            if (face == 0) { // X face
+            if (face == 0) 
+            { // X face
                 voxelUV = faceDir < 0 ? vec2(local.z, local.y) : vec2(1.0 - local.z, local.y);
-            } else if (face == 1) { // Y face
+                normal = vec3(-faceDir, 0.0, 0.0);
+            } 
+            else if (face == 1)
+            { // Y face
                 voxelUV = faceDir < 0 ? vec2(local.x, local.z) : vec2(local.x, 1.0 - local.z);
-            } else if (face == 2) { // Z face
+                normal = vec3(0.0, -faceDir, 0.0); 
+            } else if (face == 2) 
+            { // Z face
                 voxelUV = faceDir < 0 ? vec2(local.x, local.y) : vec2(1.0 - local.x, local.y);
+                normal = vec3(0.0, 0.0, -faceDir);
             }
 
             if (face == 0)      normal = vec3(-faceDir, 0.0, 0.0);  // X face
             else if (face == 1) normal = vec3(0.0, -faceDir, 0.0);  // Y face
             else if (face == 2) normal = vec3(0.0, 0.0, -faceDir);  // Z face
 
+            voxelUV = clamp(voxelUV, 0.0, 1.0);
+            float voxelID = floor(density*255);
+
+            FragColor = vec4(vec3(density),1.0);
+            return;
+            float xOffset = (face == 1) ? 1.0 : 0.0; // floor/ceiling in column 1, walls in column 0
+            float yOffset = (tilesPerCol - 1 - voxelID) * uvVoxelScale.y;
+
+            // float voxelID = floor(density*255);
+            // float xOffset = (face == 1) ? 1.0 : 0.0; // floor/ceiling in column 1, walls in column 0
+            // float yOffset = (tilesPerCol - 1 - voxelID) * uvVoxelScale.y;
+
+            voxelUV.x = voxelUV.x * uvVoxelScale.x + xOffset * uvVoxelScale.x;
+            // voxelUV.y = voxelUV.y * uvVoxelScale.y + yOffset;
+            voxelUV.y = voxelUV.y * uvVoxelScale.y + yOffset;
+            voxelUV = clamp(voxelUV, 0.0, 1.0); // clamp after scaling and offsetting
 
 
-            float voxelID = floor(density * 255.0); // tile index
-            float xOffset = (face == 1) ? 1.0 : 0.0; // column offset (floor/ceiling vs walls)
-            float yOffset = 1;  // row offset, inverted because of UV coords
-            voxelUV.x = voxelUV.x * 0.1 + (xOffset * 0.1);
-            voxelUV.y = voxelUV.y * 0.1 + (tilesPerCol - 1 - voxelID) * 0.1;
 
-            // voxelUV = clamp(voxelUV, 0.0, 1.0);
             FragColor = texture(voxelSpriteSheet, voxelUV);
-
-
+        
+       
             vec3 baseColor = FragColor.rgb;
             float voxelWorldSizeF = float(voxelWorldSize);
             vec3 startShadowPos = (hitPos) / voxelWorldSizeF;
@@ -242,7 +260,7 @@ void main() {
                 }
                 else{
                     light = SkyLight(voxel,lightDir);
-                    // light = 1.0;
+
                 }
           
                 FragColor.rgb *= light;

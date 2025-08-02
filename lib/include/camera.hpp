@@ -23,7 +23,7 @@ class Camera{
     void MoveDown(float speed);
     void MouseLook(int mouseX, int mouseY);
     glm::vec3 mEye;
-    float speed = 0.1f;
+    float speed = 0.025f;
     float mFovy;
     bool fpsControls = false;
     glm::vec3 mUpVector;
@@ -36,9 +36,6 @@ class Camera{
 
     private:
         glm::mat4 mProjectionMatrix;
-
-        // glm::vec3 mUpVector;
-        // glm::vec3 mRightVector;
         glm::vec2 mOldMousePosition;
         float pitch = 0.0f;
 
