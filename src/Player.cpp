@@ -27,11 +27,16 @@ void Player::Update(float deltaTime, VoxelTerrain *terrain)
     if(removeBlock || addBlock)
     {  
         glm::ivec3 targetVoxel = terrain->decodeVoxel(mScreenWidth,mScreenHeight,addBlock);
-        int densityValue = removeBlock ? 0 : mChosenBlock;
 
-        terrain->setVoxel(targetVoxel.x,targetVoxel.y,targetVoxel.z, densityValue);
-        terrain->updateVoxelGPU(targetVoxel.x,targetVoxel.y,targetVoxel.z);
- 
+        if(targetVoxel != glm::ivec3((int)mPosition.x,(int)mPosition.y,(int)mPosition.z))
+        {
+
+            int densityValue = removeBlock ? 0 : mChosenBlock;
+            
+            terrain->setVoxel(targetVoxel.x,targetVoxel.y,targetVoxel.z, densityValue);
+            terrain->updateVoxelGPU(targetVoxel.x,targetVoxel.y,targetVoxel.z);
+            
+        }
         removeBlock = false;
         addBlock = false;
     }

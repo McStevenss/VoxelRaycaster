@@ -15,13 +15,8 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor,false);
     loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall,false);
     loadTexture("textures/sprites/spritesheet.png", billboardSpriteTexture,true,true,false);
-    // loadTexture("textures/sprites/voxelspritesheet.png", voxelSpriteSheet,true,true, true);
-    // loadTexture("textures/sprites/voxelspritesheet_pad.png", voxelSpriteSheet,true,false, true);
     loadTexture("textures/sprites/voxelspritesheet_pad_v2.png", voxelSpriteSheet,true,true, true);
-    
-    // loadTexture("textures/sprites/voxelspritesheet_v2.png", voxelSpriteSheet,true,true, true);
 
-    // int tilesPerCol = 10;
     tilesPerRow = 2;
     tilesPerCol = 7;
 
@@ -39,8 +34,7 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     BillboardSprite::SetShader(mBillboardShader);
 
     int tileX = 3;
-    int tileY = 5; // zero-indexed
-    // float billboardSize = 1.0f; 
+    int tileY = 5;
     float billboardSize = 0.8f; 
     
     glm::vec2 spriteOffset(tileX * spriteScale.x, (spriteTilesPerCol - 1 - tileY) * spriteScale.y);
@@ -48,8 +42,6 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     mSprites.emplace_back(glm::vec3(204.0f,224.0f,75.0f), billboardSize, spriteOffset);
     mSprites.emplace_back(glm::vec3(200.0f,224.0f,76.0f), billboardSize, spriteOffset);
 
-
-    std::cout << "uvVoxelScale " << uvVoxelScale.x << " " << uvVoxelScale.y << std::endl;
 }
 
 void VoxelRenderer::Init() {

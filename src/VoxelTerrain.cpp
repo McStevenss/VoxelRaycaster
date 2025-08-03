@@ -13,8 +13,6 @@ VoxelTerrain::VoxelTerrain(unsigned int seed)
         for (int y = VoxelPadding; y < VoxelWorldSize-VoxelPadding; ++y)
             for (int x = VoxelPadding; x < VoxelWorldSize-VoxelPadding; ++x)
                 voxels[x + y * VoxelWorldSize + z * VoxelWorldSize * VoxelWorldSize] = 1;
-                // voxels[x + y * VoxelWorldSize + z * VoxelWorldSize * VoxelWorldSize] = (rand() % 100 < 50) ? 255 : 0;
-                // voxels[x + y * VoxelWorldSize + z * VoxelWorldSize * VoxelWorldSize] = 255;
 }
 
 bool VoxelTerrain::isVoxel(glm::vec3 pos)

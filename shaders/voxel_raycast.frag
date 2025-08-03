@@ -98,7 +98,7 @@ float voxelShadow(vec3 startPos, vec3 dir) {
     vec3 nextVoxelBorder = mix(voxelF, voxelF + vec3(1.0), stepPositive);
     vec3 nextT = (nextVoxelBorder / float(voxelWorldSize) - pos) / dir;
 
-    int face = -1;       // 0 = X, 1 = Y, 2 = Z
+    int face = -1;       // 0 = X, 1 = Y, 2 = Z, Default invalid
     float faceDir = 0.0;
 
     for (int i = 0; i < MAX_LIGHT_STEPS * voxelWorldSize; i++) {
@@ -116,18 +116,13 @@ float voxelShadow(vec3 startPos, vec3 dir) {
             } else if (face == 2) {
                 hitT = nextT.z - deltaT.z;
             } else {
-                // First step, no face yet, just use start
                 hitT = 0.0;
             }
 
             vec3 hitPos = startPos + dir * hitT;
             vec3 voxelOrigin = vec3(voxel) / float(voxelWorldSize);
             vec3 localPos = (hitPos - voxelOrigin) * float(voxelWorldSize);
-
-            // Clamp localPos inside voxel to avoid artifacts
             vec3 local = clamp(localPos, 0.01, 0.99);
-
-            // Compute voxelUV based on hit face
             vec2 voxelUV;
             if (face == 0) {            // X face
                 voxelUV = vec2(local.z, local.y);
@@ -138,7 +133,6 @@ float voxelShadow(vec3 startPos, vec3 dir) {
             }
             voxelUV = clamp(voxelUV, 0.0, 1.0);
 
-            // Here you calculate your sprite sheet offsets based on density or voxelID
             float voxelID = floor(density * 255.0);
             float xOffset = (face == 1) ? 1.0 : 0.0; 
             float yOffset = (tilesPerCol - 1 - voxelID) * VoxelScaleY;
