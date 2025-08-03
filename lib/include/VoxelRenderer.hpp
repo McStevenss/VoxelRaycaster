@@ -59,6 +59,7 @@ private:
     unsigned int mDepthTexture = 0;
     float tilesPerCol;
     float tilesPerRow;
+    float sheetPadding;
     // unsigned int voxelTilesPerRow;
     std::vector<GLubyte> voxels;
 

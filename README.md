@@ -6,3 +6,6 @@ Small Progress
 
 Voxel editing, specular reflections, raytraced shadows :)
 ![Alt text](textures/md3_1.png)
+
+Voxel tilemap/spritesheet :)
+![Alt text](textures/md4.png)

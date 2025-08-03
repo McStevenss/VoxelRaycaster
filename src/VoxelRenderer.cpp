@@ -15,19 +15,24 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor,false);
     loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall,false);
     loadTexture("textures/sprites/spritesheet.png", billboardSpriteTexture,true,true,false);
-    loadTexture("textures/sprites/voxelspritesheet.png", voxelSpriteSheet,true,true, true);
+    // loadTexture("textures/sprites/voxelspritesheet.png", voxelSpriteSheet,true,true, true);
+    // loadTexture("textures/sprites/voxelspritesheet_pad.png", voxelSpriteSheet,true,false, true);
+    loadTexture("textures/sprites/voxelspritesheet_pad_v2.png", voxelSpriteSheet,true,true, true);
+    
     // loadTexture("textures/sprites/voxelspritesheet_v2.png", voxelSpriteSheet,true,true, true);
 
     // int tilesPerCol = 10;
-    tilesPerRow = 10;
-    tilesPerCol = 10;
-    // int tilesPerCol = 10;
-    glm::vec2 spriteScale(1.0f / tilesPerRow, 1.0f / tilesPerCol);
+    tilesPerRow = 2;
+    tilesPerCol = 7;
 
+    int spriteTilesPerCol = 10;
+    int spriteTilesPerRow = 10;
+    
     VoxelScaleX = 1.0f / tilesPerRow;
     VoxelScaleY = 1.0f / tilesPerCol;
     // glm::vec2 uvVoxelScale = spriteScale;
-
+    
+    glm::vec2 spriteScale(1.0f / spriteTilesPerRow, 1.0f / spriteTilesPerCol);
     //Initialize buffers (Static)
     BillboardSprite::InitBuffers();
     BillboardSprite::SetTexture(billboardSpriteTexture, spriteScale);
@@ -38,7 +43,7 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
     // float billboardSize = 1.0f; 
     float billboardSize = 0.8f; 
     
-    glm::vec2 spriteOffset(tileX * spriteScale.x, (tilesPerCol - 1 - tileY) * spriteScale.y);
+    glm::vec2 spriteOffset(tileX * spriteScale.x, (spriteTilesPerCol - 1 - tileY) * spriteScale.y);
 
     mSprites.emplace_back(glm::vec3(204.0f,224.0f,75.0f), billboardSize, spriteOffset);
     mSprites.emplace_back(glm::vec3(200.0f,224.0f,76.0f), billboardSize, spriteOffset);
@@ -119,7 +124,8 @@ void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, boo
 
     if(useMipMap)
         glGenerateMipmap(GL_TEXTURE_2D);
-
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 3);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter); // Or GL_NEAREST
