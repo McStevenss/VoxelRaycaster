@@ -30,6 +30,7 @@ class VoxelTerrain {
         int VoxelWorldSize = 256;
 
         GLuint VoxelTexture;
+        unsigned int mFBO = 0;
 
     private:
         int mMapSize;

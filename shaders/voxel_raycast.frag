@@ -28,7 +28,8 @@ const float pointLightIntensity   = 1.0;  // e.g., 0.5
 const vec3 pointLightColor        = vec3(1.0,1.0,1.0); // e.g., vec3(1.0, 0.95, 0.8)
 const vec3 lightDir               = normalize(vec3(0.2, 1.0, 0.2));
 float voxelSize                   = 1.0;
-
+precision highp float;
+precision highp int;
 
 #define CAMERA_POINTLIGHT 1
 #define RAYTRACED_SHADOWS 1

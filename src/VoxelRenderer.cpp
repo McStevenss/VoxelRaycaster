@@ -12,6 +12,7 @@ VoxelRenderer::VoxelRenderer(int width, int height, VoxelTerrain *terrain)
 {
     mTerrain = terrain;
     Init();
+
     loadTexture("textures/voxels/FloorTexture.png", voxelSurfaceTexture_floor,false);
     loadTexture("textures/voxels/WallTexture.png", voxelSurfaceTexture_wall,false);
     loadTexture("textures/sprites/spritesheet.png", billboardSpriteTexture,true,true,false);
@@ -56,9 +57,16 @@ void VoxelRenderer::Init() {
     glGenFramebuffers(1, &mFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
 
+    // glGenTextures(1, &mColorTexture);
+    // glBindTexture(GL_TEXTURE_2D, mColorTexture);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mScreenWidth, mScreenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture, 0);
+
     glGenTextures(1, &mColorTexture);
     glBindTexture(GL_TEXTURE_2D, mColorTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mScreenWidth, mScreenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mScreenWidth, mScreenHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture, 0);
@@ -88,6 +96,7 @@ void VoxelRenderer::Init() {
     
     
     mTerrain->VoxelTexture = voxelTexture;
+    mTerrain->mFBO = mFBO;
 }
 
 void VoxelRenderer::loadTexture(const std::string &path, GLuint &textureRef, bool flipVertically, bool isRGBA, bool useMipMap){

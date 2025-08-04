@@ -37,7 +37,7 @@ class Player {
 
         bool removeBlock = false;
         bool addBlock = false;
-        int mChosenBlock = 0;
+        int mChosenBlock = 1;
 
         const glm::vec2 offsets[8] = {
             { PLAYER_RADIUS,  0.0f },

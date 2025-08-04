@@ -52,11 +52,14 @@ void VoxelTerrain::updateVoxelGPU(int x, int y, int z)
 glm::ivec3 VoxelTerrain::decodeVoxel(int mScreenWidth, int mScreenHeight, bool addBlock)
 {
     float voxelRGBA[4];
-    glReadPixels(mScreenWidth / 2, mScreenHeight / 2, 1, 1, GL_RGBA, GL_FLOAT, voxelRGBA);
-    glm::ivec3 voxelXYZ = glm::floor(glm::vec3(voxelRGBA[0], voxelRGBA[1], voxelRGBA[2]) * float(VoxelWorldSize));
-        
-    voxelXYZ = glm::ivec3(voxelXYZ.x+1, voxelXYZ.y+1, voxelXYZ.z);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
+        glReadPixels(mScreenWidth / 2, mScreenHeight / 2, 1, 1, GL_RGBA, GL_FLOAT, voxelRGBA);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glm::ivec3 voxelXYZ = glm::floor(glm::vec3(voxelRGBA[0], voxelRGBA[1], voxelRGBA[2]) * float(VoxelWorldSize));
+
+    voxelXYZ = glm::ivec3(voxelXYZ.x, voxelXYZ.y, voxelXYZ.z);
     int faceIndex = int(round(voxelRGBA[3] * 5.0f));
         
     glm::ivec3 faceNormal;
